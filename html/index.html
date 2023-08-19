@@ -1,0 +1,95 @@
+<html>
+	<head>
+		<title>Elements prot</title>
+		<style type="text/css">
+		body {
+			display: block;
+			background-color:0;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+		canvas {
+			background-color:#ffffff;
+			display: block;
+			margin: 0px auto;
+		}
+		</style>
+	</head>
+	<body>
+		<canvas id="a"></canvas>
+	</body>
+	<script type="text/javascript" src="geometry.js"></script>
+	<script type="text/javascript" src="input.js"></script>
+	<script type="text/javascript" src="jsfxr.js"></script>
+	<script type="text/javascript" src="audio.js"></script>
+	<script type="text/javascript" src="castle.js"></script>
+	<!--
+	<script type="text/javascript" src="camera.js"></script>
+	<script type="text/javascript" src="map.js"></script>
+	<script type="text/javascript" src="hero.js"></script>-->
+	<script type="text/javascript">
+	var now,
+		dt = 0,
+		time = timestamp(),
+		step = 1/30,
+		width = 1024,
+		height = 768;
+
+	// init
+	var canvasElement = document.getElementById('a');
+	var canvas = canvasElement.getContext('2d');
+	canvasElement.width = width;
+	canvasElement.height = height;
+	rect = canvasElement.getBoundingClientRect();
+
+	var castles = [];
+	castles[0] = Castle(100, 100);
+	castles[1] = Castle(100, 500);
+	castles[2] = Castle(500, 500);
+	castles[3] = Castle(500, 100);
+	console.log(castles);
+
+
+	var input = Input(rect);
+	//var camera = Camera();
+	//var player = Hero();
+	// setMoveDirection(45);
+
+	function timestamp() {
+		let perf = window.performance;
+		return perf && perf.now ? perf.now() : new Date().getTime();
+	}
+
+	function render() {
+		// clear
+		canvas.fillStyle    = '#000000';  // black
+		canvas.fillRect ( 0, 0, width, height);
+		
+		canvas.fillStyle    = '#FFFFFF';  // white
+		canvas.fillRect (10, 10, 100, 100)
+
+		// help
+		canvas.font = "14pt Arial";
+		canvas.fillText("Q / E - Rotate level", 10, 30);
+		canvas.fillText("Z / X - change height constant", 10, 50);
+		canvas.fillText("C / V - change tile aspect", 10, 70);
+	}
+
+	function update(dt) {
+	}
+	
+	function frame() {
+		now = timestamp();
+		dt = dt + Math.min(1, (now - time) / 1000);
+		if (dt > step) {
+			dt = step;
+		}
+		time = now;
+		update(dt);
+		render();
+		requestAnimationFrame(frame);
+	}
+	requestAnimationFrame(frame);
+	</script>
+</html>

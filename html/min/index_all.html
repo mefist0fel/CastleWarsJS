@@ -1,0 +1,1155 @@
+<html>
+	<head>
+		<title>Elements prot</title>
+		<style type="text/css">
+		body {
+			display: block;
+			background-color:0;
+			width: 100%;
+			height: 100%;
+			margin: 0;
+		}
+		canvas {
+			background-color:#ffffff;
+			display: block;
+			margin: 0px auto;
+		}
+		</style>
+	</head>
+	<body>
+		<canvas id="tutorial"></canvas>
+	</body>
+	<script type="text/javascript">
+	// basic vector2[x, y] functons
+function vAdd(av, bv) {
+	return [av[0] + bv[0], av[1] + bv[1],  av[2] + bv[2]];
+}
+function vSub(av, bv) {
+	return [av[0] - bv[0], av[1] - bv[1], av[2] - bv[2]];
+}
+function magnitude(va, vb) {
+	return Math.sqrt((va[0] - vb[0]) * (va[0] - vb[0]) + (va[1] - vb[1]) * (va[1] - vb[1]));
+}
+function vNorm(v) { // normilize
+	var dist = 1 / magnitude(v, [0, 0, 0]);
+	if (dist <= 0) {
+		dist = 0.0000000001;
+	}
+	if (dist == Infinity) {
+		dist = 10000000000000;
+	}
+	if (dist == -Infinity) {
+		dist = -10000000000000;
+	}
+	return vMult(v, dist);
+}
+function vMult(v, m) { // m - float
+	return [v[0] * m, v[1] * m, v[2] * m];
+}
+function vInRect(v, rect) { // rect is arr[4] description of AABB rect
+	return (v[0] >= rect[0] && v[0] <= rect[2] && v[1] >= rect[1] && v[1] <= rect[3]);
+}
+	function Input(rect, canvasElement) {
+	//  KEY KODES
+	//	BACKSPACE: 8,
+	//	TAB:       9,	RETURN:   13,
+	//	ESC:      27,	SPACE:    32,
+	//	PAGEUP:   33,	PAGEDOWN: 34,
+	//	END:      35,	HOME:     36,
+	//	LEFT:     37,	UP:       38,
+	//	RIGHT:    39,	DOWN:     40,
+	//	INSERT:   45,	DELETE:   46,
+	//	ZERO:     48, ONE: 49, TWO: 50, THREE: 51, FOUR: 52, FIVE: 53, SIX: 54, SEVEN: 55, EIGHT: 56, NINE: 57,
+	//	A:        65, B: 66, C: 67, D: 68, E: 69, F: 70, G: 71, H: 72, I: 73, J: 74, K: 75, L: 76, M: 77, N: 78, O: 79, P: 80, Q: 81, R: 82, S: 83, T: 84, U: 85, V: 86, W: 87, X: 88, Y: 89, Z: 90,
+	//	TILDA:    192
+
+	var input = {
+		key: [200],
+		mouseLeft: false,
+		mousePosition: [0, 0]
+	}
+	for(var i = 0; i < 200; i++) {
+		input.key[i] = false;
+	}
+
+	function setKey(keyCode, value) {
+		input.key[keyCode] = value;
+	}
+
+	function onkeydown(event) {
+		setKey(event.keyCode, true);
+	}
+	function onkeyup(event) {
+		setKey(event.keyCode, false);
+	}
+
+	function onclick(event) {
+		//ballCoord[0] = event.clientX - rect.left;
+		//ballCoord[1] = event.clientY - rect.top;
+	}
+
+	function mousedown(event) {
+		input.mouseLeft = true;
+	}
+
+	function mouseup(event) {
+		input.mouseLeft = false;
+	}
+
+	function mousemove(event) {
+		input.mousePosition[0] = event.clientX - rect.left;
+		input.mousePosition[1] = event.clientY - rect.top;
+	}
+
+	function ontouchstart(event) {
+	}
+
+	function ontouchmove(event) {
+	}
+
+	document.addEventListener('keydown',    onkeydown,    false);
+	document.addEventListener('keyup',      onkeyup,      false);
+
+	//canvasElement.addEventListener('click',		onclick,		false);
+	//canvasElement.addEventListener('mousedown', mousedown,		false);
+	//canvasElement.addEventListener('mouseup',	mouseup,		false);
+	//canvasElement.addEventListener('mousemove',	mousemove,		false);
+	//canvasElement.addEventListener('touchstart',ontouchstart,	false);
+	//canvasElement.addEventListener('touchmove',	ontouchmove,	false);
+	document.addEventListener('click',		onclick,		false);
+	document.addEventListener('mousedown', mousedown,		false);
+	document.addEventListener('mouseup',	mouseup,		false);
+	document.addEventListener('mousemove',	mousemove,		false);
+	document.addEventListener('touchstart',ontouchstart,	false);
+	document.addEventListener('touchmove',	ontouchmove,	false);
+	return input;
+}
+	function getBasis(len, angle, aspect) { // aspect y / x
+	var angX = Math.sin(angle / 180 * 3.14);
+	var angY = Math.cos(angle / 180 * 3.14);
+	return [angX * len, angY * len * aspect];
+}
+
+function Camera() {
+	var camera = {
+		position: [0, 0, 0],
+		angle: 42, 				// angle of camera view
+		aspect: 1.6 / 3, 		// x / y aspect isometric 
+		basis: [[70, 40], [40, -70]], // instead of projection matrix - 2 vector. Enougth for isometric view
+		height: 50.0, // 50 - 1 unit height in pixels
+		unit: 70,
+		recalculateBasis: function(unitSize) {
+			this.unit = unitSize;
+			this.basis[0] = getBasis(unitSize, this.angle - 90, this.aspect);
+			this.basis[1] = getBasis(unitSize, this.angle, this.aspect);
+		}
+	}
+	camera.recalculateBasis(70); // 70 - 1 unit lenght in pixels.
+	return camera;
+}
+
+	function toScreenSpace(objectPosition) { // array [x, y, z]
+		var position = vSub(objectPosition, camera.position);
+		var x = position[0] * camera.basis[0][0] + position[1] * camera.basis[1][0];
+		var y = position[0] * camera.basis[0][1] + position[1] * camera.basis[1][1];
+		return [x + width * 0.5, y + height * 0.5 - position[2] * camera.height]; // isometric
+		
+		//var position = vSub(objectPosition, camera.position);
+		//var x = position[0] * camera.basis[0][0] + position[1] * camera.basis[1][0];
+		//var y = position[0] * camera.basis[0][1] + position[1] * camera.basis[1][1];
+		//return [x * (1 + y / height * 0.5) + width * 0.5, y - position[2] * camera.height * (1 + y / height * 0.5) + height * 0.5];
+		//perspective = 0.9 + (y / (height * 0.5) * 0.1);
+		//return [(x * perspective + width * 0.5), (y * perspective + height * 0.5) - position[2] * camera.height]; // perspective isometric try
+	}
+
+	function drawProjectedPolygon(point) { // array of points [x, y, z]
+		canvas.beginPath(); // top
+		var coords = toScreenSpace(point[0]);
+		canvas.moveTo(coords[0], coords[1]);
+		for(var i = 1; i < point.length; i++) {
+			coords = toScreenSpace(point[i]);
+			canvas.lineTo(coords[0], coords[1]);
+		}
+		canvas.closePath(); // make line to first point
+		canvas.fill();
+		canvas.stroke();
+	}
+	/**
+ * SfxrParams
+ *
+ * Copyright 2010 Thomas Vian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @author Thomas Vian
+ */
+/** @constructor */
+function SfxrParams() {
+  //--------------------------------------------------------------------------
+  //
+  //  Settings String Methods
+  //
+  //--------------------------------------------------------------------------
+
+  /**
+   * Parses a settings array into the parameters
+   * @param array Array of the settings values, where elements 0 - 23 are
+   *                a: waveType
+   *                b: attackTime
+   *                c: sustainTime
+   *                d: sustainPunch
+   *                e: decayTime
+   *                f: startFrequency
+   *                g: minFrequency
+   *                h: slide
+   *                i: deltaSlide
+   *                j: vibratoDepth
+   *                k: vibratoSpeed
+   *                l: changeAmount
+   *                m: changeSpeed
+   *                n: squareDuty
+   *                o: dutySweep
+   *                p: repeatSpeed
+   *                q: phaserOffset
+   *                r: phaserSweep
+   *                s: lpFilterCutoff
+   *                t: lpFilterCutoffSweep
+   *                u: lpFilterResonance
+   *                v: hpFilterCutoff
+   *                w: hpFilterCutoffSweep
+   *                x: masterVolume
+   * @return If the string successfully parsed
+   */
+  this.setSettings = function(values)
+  {
+    for ( var i = 0; i < 24; i++ )
+    {
+      this[String.fromCharCode( 97 + i )] = values[i] || 0;
+    }
+
+    // I moved this here from the reset(true) function
+    if (this['c'] < .01) {
+      this['c'] = .01;
+    }
+
+    var totalTime = this['b'] + this['c'] + this['e'];
+    if (totalTime < .18) {
+      var multiplier = .18 / totalTime;
+      this['b']  *= multiplier;
+      this['c'] *= multiplier;
+      this['e']   *= multiplier;
+    }
+  }
+}
+
+/**
+ * SfxrSynth
+ *
+ * Copyright 2010 Thomas Vian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * @author Thomas Vian
+ */
+/** @constructor */
+function SfxrSynth() {
+  // All variables are kept alive through function closures
+
+  //--------------------------------------------------------------------------
+  //
+  //  Sound Parameters
+  //
+  //--------------------------------------------------------------------------
+
+  this._params = new SfxrParams();  // Params instance
+
+  //--------------------------------------------------------------------------
+  //
+  //  Synth Variables
+  //
+  //--------------------------------------------------------------------------
+
+  var _envelopeLength0, // Length of the attack stage
+      _envelopeLength1, // Length of the sustain stage
+      _envelopeLength2, // Length of the decay stage
+
+      _period,          // Period of the wave
+      _maxPeriod,       // Maximum period before sound stops (from minFrequency)
+
+      _slide,           // Note slide
+      _deltaSlide,      // Change in slide
+
+      _changeAmount,    // Amount to change the note by
+      _changeTime,      // Counter for the note change
+      _changeLimit,     // Once the time reaches this limit, the note changes
+
+      _squareDuty,      // Offset of center switching point in the square wave
+      _dutySweep;       // Amount to change the duty by
+
+  //--------------------------------------------------------------------------
+  //
+  //  Synth Methods
+  //
+  //--------------------------------------------------------------------------
+
+  /**
+   * Resets the runing variables from the params
+   * Used once at the start (total reset) and for the repeat effect (partial reset)
+   */
+  this.reset = function() {
+    // Shorter reference
+    var p = this._params;
+
+    _period       = 100 / (p['f'] * p['f'] + .001);
+    _maxPeriod    = 100 / (p['g']   * p['g']   + .001);
+
+    _slide        = 1 - p['h'] * p['h'] * p['h'] * .01;
+    _deltaSlide   = -p['i'] * p['i'] * p['i'] * .000001;
+
+    if (!p['a']) {
+      _squareDuty = .5 - p['n'] / 2;
+      _dutySweep  = -p['o'] * .00005;
+    }
+
+    _changeAmount =  1 + p['l'] * p['l'] * (p['l'] > 0 ? -.9 : 10);
+    _changeTime   = 0;
+    _changeLimit  = p['m'] == 1 ? 0 : (1 - p['m']) * (1 - p['m']) * 20000 + 32;
+  }
+
+  // I split the reset() function into two functions for better readability
+  this.totalReset = function() {
+    this.reset();
+
+    // Shorter reference
+    var p = this._params;
+
+    // Calculating the length is all that remained here, everything else moved somewhere
+    _envelopeLength0 = p['b']  * p['b']  * 100000;
+    _envelopeLength1 = p['c'] * p['c'] * 100000;
+    _envelopeLength2 = p['e']   * p['e']   * 100000 + 12;
+    // Full length of the volume envelop (and therefore sound)
+    // Make sure the length can be divided by 3 so we will not need the padding "==" after base64 encode
+    return ((_envelopeLength0 + _envelopeLength1 + _envelopeLength2) / 3 | 0) * 3;
+  }
+
+  /**
+   * Writes the wave to the supplied buffer ByteArray
+   * @param buffer A ByteArray to write the wave to
+   * @return If the wave is finished
+   */
+  this.synthWave = function(buffer, length) {
+    // Shorter reference
+    var p = this._params;
+
+    // If the filters are active
+    var _filters = p['s'] != 1 || p['v'],
+        // Cutoff multiplier which adjusts the amount the wave position can move
+        _hpFilterCutoff = p['v'] * p['v'] * .1,
+        // Speed of the high-pass cutoff multiplier
+        _hpFilterDeltaCutoff = 1 + p['w'] * .0003,
+        // Cutoff multiplier which adjusts the amount the wave position can move
+        _lpFilterCutoff = p['s'] * p['s'] * p['s'] * .1,
+        // Speed of the low-pass cutoff multiplier
+        _lpFilterDeltaCutoff = 1 + p['t'] * .0001,
+        // If the low pass filter is active
+        _lpFilterOn = p['s'] != 1,
+        // masterVolume * masterVolume (for quick calculations)
+        _masterVolume = p['x'] * p['x'],
+        // Minimum frequency before stopping
+        _minFreqency = p['g'],
+        // If the phaser is active
+        _phaser = p['q'] || p['r'],
+        // Change in phase offset
+        _phaserDeltaOffset = p['r'] * p['r'] * p['r'] * .2,
+        // Phase offset for phaser effect
+        _phaserOffset = p['q'] * p['q'] * (p['q'] < 0 ? -1020 : 1020),
+        // Once the time reaches this limit, some of the    iables are reset
+        _repeatLimit = p['p'] ? ((1 - p['p']) * (1 - p['p']) * 20000 | 0) + 32 : 0,
+        // The punch factor (louder at begining of sustain)
+        _sustainPunch = p['d'],
+        // Amount to change the period of the wave by at the peak of the vibrato wave
+        _vibratoAmplitude = p['j'] / 2,
+        // Speed at which the vibrato phase moves
+        _vibratoSpeed = p['k'] * p['k'] * .01,
+        // The type of wave to generate
+        _waveType = p['a'];
+
+    var _envelopeLength      = _envelopeLength0,     // Length of the current envelope stage
+        _envelopeOverLength0 = 1 / _envelopeLength0, // (for quick calculations)
+        _envelopeOverLength1 = 1 / _envelopeLength1, // (for quick calculations)
+        _envelopeOverLength2 = 1 / _envelopeLength2; // (for quick calculations)
+
+    // Damping muliplier which restricts how fast the wave position can move
+    var _lpFilterDamping = 5 / (1 + p['u'] * p['u'] * 20) * (.01 + _lpFilterCutoff);
+    if (_lpFilterDamping > .8) {
+      _lpFilterDamping = .8;
+    }
+    _lpFilterDamping = 1 - _lpFilterDamping;
+
+    var _finished = false,     // If the sound has finished
+        _envelopeStage    = 0, // Current stage of the envelope (attack, sustain, decay, end)
+        _envelopeTime     = 0, // Current time through current enelope stage
+        _envelopeVolume   = 0, // Current volume of the envelope
+        _hpFilterPos      = 0, // Adjusted wave position after high-pass filter
+        _lpFilterDeltaPos = 0, // Change in low-pass wave position, as allowed by the cutoff and damping
+        _lpFilterOldPos,       // Previous low-pass wave position
+        _lpFilterPos      = 0, // Adjusted wave position after low-pass filter
+        _periodTemp,           // Period modified by vibrato
+        _phase            = 0, // Phase through the wave
+        _phaserInt,            // Integer phaser offset, for bit maths
+        _phaserPos        = 0, // Position through the phaser buffer
+        _pos,                  // Phase expresed as a Number from 0-1, used for fast sin approx
+        _repeatTime       = 0, // Counter for the repeats
+        _sample,               // Sub-sample calculated 8 times per actual sample, averaged out to get the super sample
+        _superSample,          // Actual sample writen to the wave
+        _vibratoPhase     = 0; // Phase through the vibrato sine wave
+
+    // Buffer of wave values used to create the out of phase second wave
+    var _phaserBuffer = new Array(1024),
+        // Buffer of random values used to generate noise
+        _noiseBuffer  = new Array(32);
+    for (var i = _phaserBuffer.length; i--; ) {
+      _phaserBuffer[i] = 0;
+    }
+    for (var i = _noiseBuffer.length; i--; ) {
+      _noiseBuffer[i] = Math.random() * 2 - 1;
+    }
+
+    for (var i = 0; i < length; i++) {
+      if (_finished) {
+        return i;
+      }
+
+      // Repeats every _repeatLimit times, partially resetting the sound parameters
+      if (_repeatLimit) {
+        if (++_repeatTime >= _repeatLimit) {
+          _repeatTime = 0;
+          this.reset();
+        }
+      }
+
+      // If _changeLimit is reached, shifts the pitch
+      if (_changeLimit) {
+        if (++_changeTime >= _changeLimit) {
+          _changeLimit = 0;
+          _period *= _changeAmount;
+        }
+      }
+
+      // Acccelerate and apply slide
+      _slide += _deltaSlide;
+      _period *= _slide;
+
+      // Checks for frequency getting too low, and stops the sound if a minFrequency was set
+      if (_period > _maxPeriod) {
+        _period = _maxPeriod;
+        if (_minFreqency > 0) {
+          _finished = true;
+        }
+      }
+
+      _periodTemp = _period;
+
+      // Applies the vibrato effect
+      if (_vibratoAmplitude > 0) {
+        _vibratoPhase += _vibratoSpeed;
+        _periodTemp *= 1 + Math.sin(_vibratoPhase) * _vibratoAmplitude;
+      }
+
+      _periodTemp |= 0;
+      if (_periodTemp < 8) {
+        _periodTemp = 8;
+      }
+
+      // Sweeps the square duty
+      if (!_waveType) {
+        _squareDuty += _dutySweep;
+        if (_squareDuty < 0) {
+          _squareDuty = 0;
+        } else if (_squareDuty > .5) {
+          _squareDuty = .5;
+        }
+      }
+
+      // Moves through the different stages of the volume envelope
+      if (++_envelopeTime > _envelopeLength) {
+        _envelopeTime = 0;
+
+        switch (++_envelopeStage)  {
+          case 1:
+            _envelopeLength = _envelopeLength1;
+            break;
+          case 2:
+            _envelopeLength = _envelopeLength2;
+        }
+      }
+
+      // Sets the volume based on the position in the envelope
+      switch (_envelopeStage) {
+        case 0:
+          _envelopeVolume = _envelopeTime * _envelopeOverLength0;
+          break;
+        case 1:
+          _envelopeVolume = 1 + (1 - _envelopeTime * _envelopeOverLength1) * 2 * _sustainPunch;
+          break;
+        case 2:
+          _envelopeVolume = 1 - _envelopeTime * _envelopeOverLength2;
+          break;
+        case 3:
+          _envelopeVolume = 0;
+          _finished = true;
+      }
+
+      // Moves the phaser offset
+      if (_phaser) {
+        _phaserOffset += _phaserDeltaOffset;
+        _phaserInt = _phaserOffset | 0;
+        if (_phaserInt < 0) {
+          _phaserInt = -_phaserInt;
+        } else if (_phaserInt > 1023) {
+          _phaserInt = 1023;
+        }
+      }
+
+      // Moves the high-pass filter cutoff
+      if (_filters && _hpFilterDeltaCutoff) {
+        _hpFilterCutoff *= _hpFilterDeltaCutoff;
+        if (_hpFilterCutoff < .00001) {
+          _hpFilterCutoff = .00001;
+        } else if (_hpFilterCutoff > .1) {
+          _hpFilterCutoff = .1;
+        }
+      }
+
+      _superSample = 0;
+      for (var j = 8; j--; ) {
+        // Cycles through the period
+        _phase++;
+        if (_phase >= _periodTemp) {
+          _phase %= _periodTemp;
+
+          // Generates new random noise for this period
+          if (_waveType == 3) {
+            for (var n = _noiseBuffer.length; n--; ) {
+              _noiseBuffer[n] = Math.random() * 2 - 1;
+            }
+          }
+        }
+
+        // Gets the sample from the oscillator
+        switch (_waveType) {
+          case 0: // Square wave
+            _sample = ((_phase / _periodTemp) < _squareDuty) ? .5 : -.5;
+            break;
+          case 1: // Saw wave
+            _sample = 1 - _phase / _periodTemp * 2;
+            break;
+          case 2: // Sine wave (fast and accurate approx)
+            _pos = _phase / _periodTemp;
+            _pos = (_pos > .5 ? _pos - 1 : _pos) * 6.28318531;
+            _sample = 1.27323954 * _pos + .405284735 * _pos * _pos * (_pos < 0 ? 1 : -1);
+            _sample = .225 * ((_sample < 0 ? -1 : 1) * _sample * _sample  - _sample) + _sample;
+            break;
+          case 3: // Noise
+            _sample = _noiseBuffer[Math.abs(_phase * 32 / _periodTemp | 0)];
+        }
+
+        // Applies the low and high pass filters
+        if (_filters) {
+          _lpFilterOldPos = _lpFilterPos;
+          _lpFilterCutoff *= _lpFilterDeltaCutoff;
+          if (_lpFilterCutoff < 0) {
+            _lpFilterCutoff = 0;
+          } else if (_lpFilterCutoff > .1) {
+            _lpFilterCutoff = .1;
+          }
+
+          if (_lpFilterOn) {
+            _lpFilterDeltaPos += (_sample - _lpFilterPos) * _lpFilterCutoff;
+            _lpFilterDeltaPos *= _lpFilterDamping;
+          } else {
+            _lpFilterPos = _sample;
+            _lpFilterDeltaPos = 0;
+          }
+
+          _lpFilterPos += _lpFilterDeltaPos;
+
+          _hpFilterPos += _lpFilterPos - _lpFilterOldPos;
+          _hpFilterPos *= 1 - _hpFilterCutoff;
+          _sample = _hpFilterPos;
+        }
+
+        // Applies the phaser effect
+        if (_phaser) {
+          _phaserBuffer[_phaserPos % 1024] = _sample;
+          _sample += _phaserBuffer[(_phaserPos - _phaserInt + 1024) % 1024];
+          _phaserPos++;
+        }
+
+        _superSample += _sample;
+      }
+
+      // Averages out the super samples and applies volumes
+      _superSample *= .125 * _envelopeVolume * _masterVolume;
+
+      // Clipping if too loud
+      buffer[i] = _superSample >= 1 ? 32767 : _superSample <= -1 ? -32768 : _superSample * 32767 | 0;
+    }
+
+    return length;
+  }
+}
+
+// Adapted from http://codebase.es/riffwave/
+var synth = new SfxrSynth();
+// Export for the Closure Compiler
+window['jsfxr'] = function(settings) {
+  // Initialize SfxrParams
+  synth._params.setSettings(settings);
+  // Synthesize Wave
+  var envelopeFullLength = synth.totalReset();
+  var data = new Uint8Array(((envelopeFullLength + 1) / 2 | 0) * 4 + 44);
+  var used = synth.synthWave(new Uint16Array(data.buffer, 44), envelopeFullLength) * 2;
+  var dv = new Uint32Array(data.buffer, 0, 44);
+  // Initialize header
+  dv[0] = 0x46464952; // "RIFF"
+  dv[1] = used + 36;  // put total size here
+  dv[2] = 0x45564157; // "WAVE"
+  dv[3] = 0x20746D66; // "fmt "
+  dv[4] = 0x00000010; // size of the following
+  dv[5] = 0x00010001; // Mono: 1 channel, PCM format
+  dv[6] = 0x0000AC44; // 44,100 samples per second
+  dv[7] = 0x00015888; // byte rate: two bytes per sample
+  dv[8] = 0x00100002; // 16 bits per sample, aligned on every two bytes
+  dv[9] = 0x61746164; // "data"
+  dv[10] = used;      // put number of samples here
+
+  // Base64 encoding written by me, @maettig
+  used += 44;
+  var i = 0,
+      base64Characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',
+      output = 'data:audio/wav;base64,';
+  for (; i < used; i += 3)
+  {
+    var a = data[i] << 16 | data[i + 1] << 8 | data[i + 2];
+    output += base64Characters[a >> 18] + base64Characters[a >> 12 & 63] + base64Characters[a >> 6 & 63] + base64Characters[a & 63];
+  }
+  return output;
+}
+
+var url = window.URL || window.webkitURL;
+
+function playSound(params) {
+  try {
+    var soundURL = jsfxr(params);
+    var player = new Audio();
+    player.addEventListener('error', function(e) {
+      console.log("Error: " + player.error.code);
+    }, false);
+    player.src = soundURL;
+    player.play();
+    player.addEventListener('ended', function(e) {
+      url.revokeObjectURL(soundURL);
+    }, false);
+  } catch(e) {
+    console.log(e.message);
+  }
+}
+      
+function playString(str) {
+   var temp = str.split(",");
+   var params = new Array();
+   for(var i = 0; i < temp.length; i++) {
+     params[i] = parseFloat(temp[i]);
+   }
+   playSound(params);
+}
+	var map = [	1,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+				1,2,1,0,0,1,0,0,0,1,1,0,0,1,0,0,
+				1,3,2,1,1,0,0,0,1,1,1,0,1,0,0,0,
+				1,1,1,1,1,1,0,0,0,0,0,1,1,1,0,0,
+				0,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+				0,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,
+				0,0,1,1,1,0,0,0,0,0,1,1,1,0,0,0,
+				1,0,0,1,0,0,0,0,0,0,0,1,0,0,0,0,
+				2,1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,
+				3,1,1,0,0,1,0,0,0,1,1,0,0,1,0,0,
+				3,3,2,0,1,0,0,0,1,1,1,0,1,0,0,0,
+				4,3,2,1,1,1,0,0,0,0,0,1,1,1,0,0,
+				4,3,2,0,0,0,0,0,0,1,0,0,0,0,0,0,
+				6,3,3,1,0,0,0,0,0,0,0,1,0,0,0,0,
+				5,3,3,2,1,1,0,0,0,0,1,1,1,0,0,0,
+				4,3,3,2,0,1,0,0,0,0,0,1,0,0,0,0];
+	var now,
+		dt = 0,
+		time = timestamp(),
+		step = 1/30,
+		width = 1024,
+		height = 768;
+
+
+	function GameObject() {
+		var obj = {
+			active: false,
+			position: [0, 0, 0],
+			velocity: [0, 0, 0],
+			life: 100,
+			radius: 0.2
+		}
+		return obj;
+	}
+
+	// init
+	var canvasElement = document.getElementById('tutorial');
+	var canvas = canvasElement.getContext('2d');
+	canvasElement.width = width;
+	canvasElement.height = height;
+	rect = canvasElement.getBoundingClientRect();
+
+	var input = Input(rect, canvasElement);
+	var camera = Camera();
+	var player = GameObject();
+	var playerCanJump = false;
+	player.position = [3.5, 3.5, 2];
+	var playerHover = 0.3;
+	var hoverTime = 0;
+	var moveDirection = [];
+
+	function getAngleVector(angle, multiplier) {
+		var angX = Math.sin(angle / 180 * 3.14);
+		var angY = Math.cos(angle / 180 * 3.14);
+		return [angX * multiplier, angY * multiplier, 0];
+	}
+	function setMoveDirection(cameraAngle) {
+		// UP
+		// DOWN 
+		// LEFT 
+		// RIGHT
+		moveDirection = [
+			getAngleVector(camera.angle + 180, 1.8),
+			getAngleVector(camera.angle + 0, 1.8),
+			getAngleVector(camera.angle + 90, 1.8),
+			getAngleVector(camera.angle + 270, 1.8)
+		];
+	}
+	setMoveDirection(45);//(camera.angle);
+	var bullet = [200];
+	for(var i = 0; i < 200; i++) {
+		bullet[i] = GameObject();
+	}
+
+	function animateHover(dt) {
+		hoverTime += dt;
+		if (hoverTime > 1.8) {
+			hoverTime = 0;
+		}
+		playerHover = Math.sin(hoverTime / 1.8 * 3.14 * 2) * 0.06 + 0.4;
+	}
+
+	function fire(position, velocity) {
+		for(var i = 0; i < 200; i++) {
+			if (!bullet[i].active) {
+				bullet[i].active = true;
+				bullet[i].position = position;
+				bullet[i].velocity = vMult(vAdd(velocity, [Math.random() * 0.1 - 0.05, Math.random() * 0.1 - 0.05, 0]), 400);
+				bullet[i].life = 3; // 3 sec life
+				break;
+			}
+		}
+	}
+	function timestamp() {
+		return window.performance && window.performance.now ? window.performance.now() : new Date().getTime();
+	}
+
+	function grayScale(a) {
+		return 'rgba(' + a + ',' + a + ',' + a +',1)';  // white
+	}
+
+	function isSidePolygonFrontFace(pointA, pointB) {
+		coordA = toScreenSpace(pointA);
+		coordB = toScreenSpace(pointB);
+		return coordA[0] < coordB[0];
+	}
+
+	function drawTile(x, y, z, bottom) {
+		var size = 40;
+		var height = 40;
+		// side 1
+		//canvas.fillStyle    = '#bbbbbb';  // gray
+		if (isSidePolygonFrontFace([x + 1, y, z], [x + 1, y + 1, z])) {
+			canvas.fillStyle    = grayScale(180 + (x + y) % 2 * 20 - (x + y) % 3 * 8);  // gray
+			canvas.strokeStyle = canvas.fillStyle;
+			drawProjectedPolygon([
+				[x + 1, y, z], [x + 1, y + 1, z], [x + 1, y + 1, bottom], [x + 1, y, bottom]
+			]);
+		}
+		// side 2
+		//canvas.fillStyle    = '#cccccc';  // gray
+		if (isSidePolygonFrontFace([x + 1, y + 1, z], [x, y + 1, z])) {
+			canvas.fillStyle    = grayScale(160 + (x + y) % 2 * 20 - (x + y) % 3 * 8);  // gray
+			canvas.strokeStyle = canvas.fillStyle;
+			drawProjectedPolygon([
+				[x + 1, y + 1, z], [x, y + 1, z], [x, y + 1, bottom], [x + 1, y + 1, bottom]
+			]);
+		}
+		// side 3
+		//canvas.fillStyle    = '#cccccc';  // gray
+		if (isSidePolygonFrontFace([x, y + 1, z], [x, y, z])) {
+			canvas.fillStyle    = grayScale(180 + (x + y) % 2 * 20 - (x + y) % 3 * 8);  // gray
+			canvas.strokeStyle = canvas.fillStyle;
+			drawProjectedPolygon([
+				[x, y + 1, z], [x, y, z], [x, y, bottom], [x, y + 1, bottom]
+			]);
+		}
+		// side 4
+		//canvas.fillStyle    = '#cccccc';  // gray
+		if (isSidePolygonFrontFace([x, y, z], [x + 1, y, z])) {
+			canvas.fillStyle    = grayScale(160 + (x + y) % 2 * 20 - (x + y) % 3 * 8);  // gray
+			canvas.strokeStyle = canvas.fillStyle;
+			drawProjectedPolygon([
+				[x, y, z], [x + 1, y, z], [x + 1, y, bottom], [x, y, bottom]
+			]);
+		}
+		// top
+		if ((x + y) % 2 > 0.5) {
+			canvas.fillStyle    = grayScale(240 + z * 10);  // gray
+		} else {
+			canvas.fillStyle    = grayScale(230 + z * 10);  // gray
+		}
+		canvas.strokeStyle = canvas.fillStyle;
+		drawProjectedPolygon([
+			[x, y, z], [x + 1, y, z],
+			[x + 1, y + 1, z], [x, y + 1, z]
+		]);
+		// hero shadow
+		drawHeroShadow(x, y, z);
+	}
+	var shadowPoints = [16];
+	for(var i = 0; i < 16; i ++) {
+		shadowPoints[i] = [Math.cos(i * 22 / 180 * 3.14), Math.sin(i * 22 / 180 * 3.14)];// 22 = 360 / 16
+	}
+	function drawHeroShadow(x, y, z) {
+		if (z < 0) {
+			return;
+		}
+		var xPlayer = Math.floor(player.position[0] - 0.5);
+		var yPlayer = Math.floor(player.position[1] - 0.5);
+		if ((x == xPlayer || x == xPlayer + 1) && (y == yPlayer || y == yPlayer + 1)) {
+			// hero shadow
+			canvas.fillStyle = 'rgba(0,0,0,0.2)';  // white
+			canvas.strokeStyle = 'rgba(0,0,0,0.0)';  // white
+			var heroOnMap = [x, y];
+			if (map[heroOnMap[0] * 16 + heroOnMap[1]] > 0) {
+				var mapHeight = map[heroOnMap[0] * 16 + heroOnMap[1]] * 0.5;
+				var shadowRadius = player.radius * (1.0 - Math.max(0, player.position[2] - mapHeight) * 0.14);
+				var shadow = [8];
+				for(var z = 0; z < shadowPoints.length; z++) {
+					shadow[z] = [
+						Math.max(heroOnMap[0], Math.min(heroOnMap[0] + 1, player.position[0] + shadowPoints[z][0] * shadowRadius)),
+						Math.max(heroOnMap[1], Math.min(heroOnMap[1] + 1, player.position[1] + shadowPoints[z][1] * shadowRadius)),
+						mapHeight];
+				}
+				drawProjectedPolygon(shadow);
+				canvas.fill();
+			}
+		}
+	}
+	function drawHero() {
+		// test
+		//canvas.font = "20pt Arial";
+		//canvas.fillText("coord " + heroOnMap[0] + " " + heroOnMap[1] +  " " + map[heroOnMap[0] * 16 + heroOnMap[1]], 10, 30);
+		// circle - hero
+		canvas.fillStyle= '#FF0000';  // red
+		canvas.beginPath();
+		var heroPosition = toScreenSpace(vAdd(player.position, [0,0,playerHover]));
+		canvas.arc(heroPosition[0], heroPosition[1], player.radius * /*4 * 18*/camera.unit, 0, 2*Math.PI);
+		canvas.closePath();
+		canvas.fill();
+		canvas.fillStyle= '#FFFFFF';  // white
+		canvas.beginPath();
+		canvas.arc(heroPosition[0] + player.radius * 0.3 * /*4 * 18*/camera.unit, heroPosition[1] - player.radius * 0.3 */* 4 * 18*/camera.unit, player.radius * 0.2 * /*4 * 18*/camera.unit, 0, 2*Math.PI);
+		canvas.closePath();
+		canvas.fill();
+	}
+	function render() {
+		// clear
+		canvas.fillStyle    = '#000000';  // black
+		canvas.fillRect ( 0, 0, width, height);
+		var heroVisOnMap = [Math.floor(player.position[0]), Math.floor(player.position[1])];
+		if (camera.angle > 180) {
+			if (map[Math.floor(player.position[0] - player.radius) * 16 + Math.floor(player.position[1])] * 0.5 <= player.position[2] ) {
+				heroVisOnMap[0] -= 1;
+			}
+		} else {
+			if (map[Math.floor(player.position[0] + player.radius) * 16 + Math.floor(player.position[1])] * 0.5 <= player.position[2] ) {
+				heroVisOnMap[0] += 1;
+			}
+		}
+		if (camera.angle > 90 && camera.angle < 270) {
+			if (map[Math.floor(player.position[0]) * 16 + Math.floor(player.position[1] - player.radius)] * 0.5 <= player.position[2] ) {
+				heroVisOnMap[1] -= 1;                                                  
+			}                                                                          
+		} else {                                                                       
+			if (map[Math.floor(player.position[0]) * 16 + Math.floor(player.position[1] + player.radius)] * 0.5 <= player.position[2] ) {
+				heroVisOnMap[1] += 1;
+			}
+		}
+		// map
+		for(var i = 0; i < 16; i ++) {
+			for(var j = 0; j < 16; j ++) {
+				var x = i;
+				var y = j;
+				// for sort order
+				if (camera.angle > 180) {
+					x = 15 - i;
+				}
+				if (camera.angle > 90 && camera.angle < 270) {
+					y = 15 - j;
+				}
+				if (map[x * 16 + y] > 0) {
+					drawTile(x, y, map[x * 16 + y] * 0.5, ((x % 3 + y % 5) % 7 + 1) * -0.34);
+				}
+				if (heroVisOnMap[0] == x && heroVisOnMap[1] == y) {
+					drawHero();
+				}
+			}
+		}
+		// bullets
+		for(var i = 0; i < 200; i++) {
+			if (bullet[i].active) {
+				canvas.fillRect ( bullet[i].position[0] - 1, bullet[i].position[1] - 1, 2, 2);
+			}
+		}
+		// help
+		canvas.font = "14pt Arial";
+		canvas.fillText("Q / E - Rotate level", 10, 30);
+		canvas.fillText("Z / X - change height constant", 10, 50);
+		canvas.fillText("C / V - change tile aspect", 10, 70);
+		canvas.fillText("Camera angle " + camera.angle, 10, 90);
+	}
+	function update(dt) {
+		animateHover(dt);
+		// control
+		player.velocity = [0, 0, player.velocity[2]]
+		// UP = 38
+		// DOWN = 40
+		// LEFT = 37
+		// RIGHT = 39
+		// W = 87
+		// S = 83
+		// A = 65
+		// D = 68
+		// space = 32
+		if (input.key[38] || input.key[87]) {
+			player.velocity = vAdd(player.velocity, moveDirection[0]);
+			//player.velocity[1] -= 100;
+		}
+		if (input.key[40] || input.key[83]) {
+			player.velocity = vAdd(player.velocity, moveDirection[1]);
+			//player.velocity[1] += 100;
+		}
+		if (input.key[37] || input.key[65]) {
+			player.velocity = vAdd(player.velocity, moveDirection[2]);
+			//player.velocity[0] -= 100;
+		}
+		if (input.key[39] || input.key[68]) {
+			player.velocity = vAdd(player.velocity, moveDirection[3]);
+			//player.velocity[0] += 100;
+		}
+		if (input.key[32] && playerCanJump) {
+			player.velocity = vAdd(player.velocity, [ 0, 0, 3]);
+			playerCanJump = false;
+			playSound([0,,0.1812,,0.1349,0.4524,,0.2365,,,,,,0.0819,,,,,1,,,,,0.5]);
+		}
+		if (input.key[69]) { //E 
+			camera.angle += 1;
+			camera.recalculateBasis(70);
+			setMoveDirection(camera.angle);
+		}
+		if (input.key[81]) { //Q 
+			camera.angle -= 1;
+			camera.recalculateBasis(70);
+			setMoveDirection(camera.angle);
+		}
+		if (input.key[67]) { //C
+			camera.aspect += 0.01;
+			if (camera.aspect >= 1) {
+				camera.aspect = 1; 
+			}
+			camera.recalculateBasis(70);
+			setMoveDirection(camera.angle);
+		}
+		if (input.key[86]) { //V
+			camera.aspect -= 0.01;
+			if (camera.aspect <= -1) {
+				camera.aspect = -1; 
+			}
+			camera.recalculateBasis(70);
+			setMoveDirection(camera.angle);
+		}
+		if (input.key[88]) { //X
+			camera.height += 0.5;
+			if (camera.height >= 100) {
+				camera.height = 100; 
+			}
+			camera.recalculateBasis(70);
+			setMoveDirection(camera.angle);
+		}
+		if (input.key[90]) { //Z
+			camera.height -= 0.5;
+			if (camera.height <= 5) {
+				camera.height = 5; 
+			}
+			camera.recalculateBasis(70);
+			setMoveDirection(camera.angle);
+		}
+		// player fire
+		if (input.mouseLeft) {
+			fire(player.position, vNorm(vSub(input.mousePosition, player.position)));
+		}
+		// fall
+		player.velocity[2] -= 3 * dt;
+		// add velocity
+		newCoord = vAdd(player.position, vMult(player.velocity, dt));
+		
+		// collision of circle with quad - is collision with 4 angle and 2 AABB rects
+		var heroOnMap = [Math.floor(player.position[0]), Math.floor(player.position[1])];
+		for(var i = Math.max(0, heroOnMap[0] - 1); i <= heroOnMap[0] + 1 && i < 16; i ++) {
+			for(var j = Math.max(0, heroOnMap[1] - 1); j <= heroOnMap[1] + 1 && j < 16; j ++) {
+				if (map[i * 16 + j] > 0) {
+					var mapHeight = map[i * 16 + j] * 0.5;// + playerHover;
+					var corrector = [0, 0, 0];
+					var collide = false;
+					var points = [[i, j, 0], [i + 1, j, 0], [i + 1, j + 1, 0], [i, j + 1, 0]];
+					for(var a = 0; a < 4; a++) {
+						var dist = magnitude(newCoord, points[a]);
+						if (dist <= player.radius) {
+							corrector = vNorm(vSub(points[a], newCoord));
+							corrector[2] = 0;
+							corrector = vMult(corrector, dist - player.radius);
+							collide = true;
+						}
+					}	
+					//sides
+					if (vInRect(newCoord, [i - player.radius, j, i + 1 + player.radius, j + 1])) {
+						corrector[1] = 0;
+						collide = true;
+						if (newCoord[0] < i + 0.5) {
+							corrector[0] = i - player.radius - newCoord[0];
+						} else {
+							corrector[0] = i + 1 + player.radius - newCoord[0];
+						}
+					}
+					if (vInRect(newCoord, [i, j - player.radius, i + 1, j + 1 + player.radius])) {
+						corrector[0] = 0;
+						collide = true;
+						if (newCoord[1] < j + 0.5) {
+							corrector[1] = j - player.radius - newCoord[1];
+						} else {
+							corrector[1] = j + 1 + player.radius - newCoord[1];
+						}
+					}
+					if (collide && mapHeight >= newCoord[2] && mapHeight <= player.position[2]) { // fall on tile - stay on its top
+						player.velocity[2] = 0;
+						playerCanJump = true;
+						newCoord[2] = mapHeight;
+						collide = false;
+					}
+				}
+			}
+		}
+	
+		for(var i = Math.max(0, heroOnMap[0] - 1); i <= heroOnMap[0] + 1 && i < 16; i ++) {
+			for(var j = Math.max(0, heroOnMap[1] - 1); j <= heroOnMap[1] + 1 && j < 16; j ++) {
+				if (map[i * 16 + j] > 0) {
+					var mapHeight = map[i * 16 + j] * 0.5;// + playerHover;
+					var corrector = [0, 0, 0];
+					var collide = false;
+					var points = [[i, j, 0], [i + 1, j, 0], [i + 1, j + 1, 0], [i, j + 1, 0]];
+					for(var a = 0; a < 4; a++) {
+						var dist = magnitude(newCoord, points[a]);
+						if (dist <= player.radius) {
+							corrector = vNorm(vSub(points[a], newCoord));
+							corrector[2] = 0;
+							corrector = vMult(corrector, dist - player.radius);
+							collide = true;
+						}
+					}	
+					//sides
+					if (vInRect(newCoord, [i - player.radius, j, i + 1 + player.radius, j + 1])) {
+						corrector[1] = 0;
+						collide = true;
+						collideH = mapHeight;
+						if (newCoord[0] < i + 0.5) {
+							corrector[0] = i - player.radius - newCoord[0];
+						} else {
+							corrector[0] = i + 1 + player.radius - newCoord[0];
+						}
+					}
+					if (vInRect(newCoord, [i, j - player.radius, i + 1, j + 1 + player.radius])) {
+						corrector[0] = 0;
+						collide = true;
+						if (newCoord[1] < j + 0.5) {
+							corrector[1] = j - player.radius - newCoord[1];
+						} else {
+							corrector[1] = j + 1 + player.radius - newCoord[1];
+						}
+					}
+					if (collide && mapHeight > newCoord[2]) { // collide in tile - correct position to move out from this
+						newCoord = vAdd(newCoord, corrector);
+					}
+				}
+			}
+		}
+		if (newCoord[2] < -5.0) { // fall
+			player.velocity[2] = 0;
+			newCoord = [3.5, 3.5, 2];
+			playerCanJump = true;
+		}
+		player.position = newCoord;
+		// bullets
+		for(var i = 0; i < 200; i++) {
+			if (bullet[i].active) {
+				bullet[i].position = vAdd(bullet[i].position, vMult(bullet[i].velocity, dt));
+				bullet[i].life -= dt;
+				if (bullet[i].life < 0) {
+					bullet[i].active = false;
+				}
+			}
+		}
+		camera.position = vAdd(vMult(camera.position, 0.9), vMult(vAdd(player.position, [0,0,-0.4]), 0.1));
+	}
+	function frame() {
+		now = timestamp();
+		dt = dt + Math.min(1, (now - time) / 1000);
+		if (dt > step) {
+			dt = step;
+		}
+		update(step);
+		render();
+		time = now;
+		requestAnimationFrame(frame);
+	}
+	requestAnimationFrame(frame);
+	</script>
+</html>
