@@ -1,3 +1,6 @@
+const castleSize = 40;
+const selectionHeight = 45;
+
 function Castle(x, y, factionId = -1) {
 	var castle = {
 		pos: [x, y],
@@ -5,15 +8,27 @@ function Castle(x, y, factionId = -1) {
 		lives: 10,
 		max: 100,
 		draw(canvas) {
-			const castleHeight = 60;
-			canvas.fillStyle = getFactionColor(castle.faction);  // white
-			canvas.fillRect (castle.pos[0] - castleHeight, castle.pos[1] - castleHeight, castleHeight + castleHeight, castleHeight + castleHeight)
-			canvas.fillText(castle.lives, castle.pos[0], castle.pos[1] - 70);
+			canvas.fillStyle = getFactionColor(castle.faction);
+			canvas.fillRect (castle.pos[0] - castleSize, castle.pos[1] - castleSize, castleSize + castleSize, castleSize + castleSize)
+			canvas.textAlign = 'center';
+			canvas.fillText(castle.lives, castle.pos[0], castle.pos[1] - 50);
+		},
+		drawSelection(canvas) {
+			canvas.fillStyle = '#FFFFFF';// white
+			canvas.fillRect (castle.pos[0] - selectionHeight, castle.pos[1] - selectionHeight, selectionHeight + selectionHeight, selectionHeight + selectionHeight)
 		},
 		apply() {
 			if (castle.lives < castle.max) {
 				castle.lives += 1;
 			}
+		},
+		contains(point) {
+			let pos = castle.pos;
+			return (
+				pos[0] - castleSize < point[0] && 
+				pos[1] - castleSize < point[1] && 
+				pos[0] + castleSize > point[0] && 
+				pos[1] + castleSize > point[1])
 		}
 	}
 	return castle;
