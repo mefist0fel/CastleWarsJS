@@ -82,19 +82,19 @@ function Input(rect) {
 	// function ontouchmove(event) {
 	// }
 
+	addEvent('contextmenu', preventmenu);
+
+	addEvent('keydown',    onkeydown );
+	addEvent('keyup',      onkeyup   );
+	addEvent('click',	   onclick   );
+	addEvent('mousedown',  mousedown );
+	addEvent('mouseup',	   mouseup   );
+	addEvent('mousemove',  mousemove );
+	// addEvent('touchstart',ontouchstart);
+	// addEvent('touchmove',	ontouchmove);
+
 	function addEvent(event, func) {
 		document.addEventListener(event, func, false)
 	}
-	
-	addEvent('contextmenu', preventmenu, false);
-
-	addEvent('keydown',    onkeydown,    false);
-	addEvent('keyup',      onkeyup,      false);
-	addEvent('click',	   onclick,		 false);
-	addEvent('mousedown',  mousedown,	 false);
-	addEvent('mouseup',	   mouseup,		 false);
-	addEvent('mousemove',  mousemove,	 false);
-	// addEvent('touchstart',ontouchstart,	false);
-	// addEvent('touchmove',	ontouchmove,	false);
 	return input;
 }

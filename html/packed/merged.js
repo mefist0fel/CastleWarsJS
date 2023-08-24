@@ -108,21 +108,26 @@ function Input(rect) {
 		input.mousePosition[1] = event.clientY - rect.top;
 	}
 
-	function ontouchstart(event) {
-	}
+	// function ontouchstart(event) {
+	// }
 
-	function ontouchmove(event) {
-	}
+	// function ontouchmove(event) {
+	// }
 
-	document.addEventListener('keydown',    onkeydown,    false);
-	document.addEventListener('keyup',      onkeyup,      false);
-	document.addEventListener('click',		onclick,		false);
-	document.addEventListener('mousedown', mousedown,		false);
-	document.addEventListener('mouseup',	mouseup,		false);
-	document.addEventListener('mousemove',	mousemove,		false);
-	document.addEventListener('touchstart',ontouchstart,	false);
-	document.addEventListener('touchmove',	ontouchmove,	false);
-	document.addEventListener('contextmenu', preventmenu,	false);
+	function addEvent(event, func) {
+		document.addEventListener(event, func, false)
+	}
+	
+	addEvent('contextmenu', preventmenu, false);
+
+	addEvent('keydown',    onkeydown,    false);
+	addEvent('keyup',      onkeyup,      false);
+	addEvent('click',	   onclick,		 false);
+	addEvent('mousedown',  mousedown,	 false);
+	addEvent('mouseup',	   mouseup,		 false);
+	addEvent('mousemove',  mousemove,	 false);
+	// addEvent('touchstart',ontouchstart,	false);
+	// addEvent('touchmove',	ontouchmove,	false);
 	return input;
 }
 
@@ -757,17 +762,6 @@ function CreateUnit(x, y, factionId, target) {
 	gameObjects.push(unit)
 	drawObjects.push(unit)
 	return unit;
-}
-
-function getFactionColor(factionId) {
-	switch (factionId) {
-		case 0: return '#0000FF'; // player
-		case 1: return '#FF0000'; // enemy
-		case 2: return '#00FF00'; // enemy 2
-		case -1:
-		default:	
-			return '#555555'; // neutral
-	}
 }
 
 function removeItem(array, item) {
