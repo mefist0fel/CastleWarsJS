@@ -14,8 +14,15 @@ function Input(rect) {
 	
 	var input = {
 		key: [200],
+		mouseLeftDown: false,
+		mouseRightDown: false,
 		mouseLeft: false,
-		mousePosition: [0, 0]
+		mouseRight: false,
+		mousePosition: [0, 0],
+		update (dt) {
+			this.mouseLeftDown = false
+			this.mouseRightDown = false
+		}
 	}
 	for(var i = 0; i < 200; i++) {
 		input.key[i] = false;
@@ -33,16 +40,35 @@ function Input(rect) {
 	}
 
 	function onclick(event) {
+		// event.preventDefault();
+		//ballCoord[0] = event.clientX - rect.left;
+		//ballCoord[1] = event.clientY - rect.top;
+	}
+
+	function preventmenu(event) {
+		event.preventDefault();
 		//ballCoord[0] = event.clientX - rect.left;
 		//ballCoord[1] = event.clientY - rect.top;
 	}
 
 	function mousedown(event) {
-		input.mouseLeft = true;
+		if(event.button == 0) {
+			input.mouseLeftDown = true;
+			input.mouseLeft = true;
+		}
+		if(event.button == 2) {
+			input.mouseRightDown = true;
+			input.mouseLeft = true;
+		}
 	}
 
 	function mouseup(event) {
-		input.mouseLeft = false;
+		if(event.button == 0) {
+			input.mouseLeft = false;
+		}
+		if(event.button == 2) {
+			input.mouseRight = false;
+		}
 	}
 
 	function mousemove(event) {
@@ -64,5 +90,6 @@ function Input(rect) {
 	document.addEventListener('mousemove',	mousemove,		false);
 	document.addEventListener('touchstart',ontouchstart,	false);
 	document.addEventListener('touchmove',	ontouchmove,	false);
+	document.addEventListener('contextmenu', preventmenu,	false);
 	return input;
 }

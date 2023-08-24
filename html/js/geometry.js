@@ -1,15 +1,18 @@
 // basic vector2[x, y] functons
 function vAdd(av, bv) {
-	return [av[0] + bv[0], av[1] + bv[1],  av[2] + bv[2]];
+	return [av[0] + bv[0], av[1] + bv[1]];
 }
 function vSub(av, bv) {
-	return [av[0] - bv[0], av[1] - bv[1], av[2] - bv[2]];
+	return [av[0] - bv[0], av[1] - bv[1]];
 }
-function magnitude(va, vb) {
+function magnitude(va) {
+	return Math.sqrt(va[0] * va[0] + va[1] * va[1]);
+}
+function distance(va, vb) {
 	return Math.sqrt((va[0] - vb[0]) * (va[0] - vb[0]) + (va[1] - vb[1]) * (va[1] - vb[1]));
 }
 function vNorm(v) { // normilize
-	var dist = 1 / magnitude(v, [0, 0, 0]);
+	var dist = 1 / magnitude(v);
 	if (dist <= 0) {
 		dist = 0.0000000001;
 	}
