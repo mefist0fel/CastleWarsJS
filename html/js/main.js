@@ -19,11 +19,13 @@
 
 	var gameObjects = [];
 	var drawObjects = [];
-	var castles = [];
-	castles.push(CreateCastle(300, 300, 0))
-	castles.push(CreateCastle(300, 500))
-	castles.push(CreateCastle(700, 500, 1))
-	castles.push(CreateCastle(700, 300))
+	CreateCastle(100, 400, 0, 2)
+	CreateCastle(900, 400, 1, 2)
+	for(var i = -1; i < 2; i++) {
+		for(var j = -1; j < 2; j++) {
+			CreateCastle(i * 200 + 500, j * 200 + 400)
+		}
+	}
 
 	var input = Input(rect)
 	gameObjects.push(input)
@@ -71,15 +73,6 @@
 			}
 		}
 		gameObjects.forEach(g => g.update(dt));
-	}
-
-	function getCastle(pos) {
-		for(var i = 0; i < castles.length; i++) {
-			if (castles[i].contains(pos)) {
-				return castles[i];
-			}
-		}
-		return null;
 	}
 
 	let animationFrameFunction = requestAnimationFrame
