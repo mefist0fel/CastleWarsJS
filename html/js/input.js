@@ -76,20 +76,25 @@ function Input(rect) {
 		input.mousePosition[1] = event.clientY - rect.top;
 	}
 
-	function ontouchstart(event) {
-	}
+	// function ontouchstart(event) {
+	// }
 
-	function ontouchmove(event) {
-	}
+	// function ontouchmove(event) {
+	// }
 
-	document.addEventListener('keydown',    onkeydown,    false);
-	document.addEventListener('keyup',      onkeyup,      false);
-	document.addEventListener('click',		onclick,		false);
-	document.addEventListener('mousedown', mousedown,		false);
-	document.addEventListener('mouseup',	mouseup,		false);
-	document.addEventListener('mousemove',	mousemove,		false);
-	document.addEventListener('touchstart',ontouchstart,	false);
-	document.addEventListener('touchmove',	ontouchmove,	false);
-	document.addEventListener('contextmenu', preventmenu,	false);
+	function addEvent(event, func) {
+		document.addEventListener(event, func, false)
+	}
+	
+	addEvent('contextmenu', preventmenu, false);
+
+	addEvent('keydown',    onkeydown,    false);
+	addEvent('keyup',      onkeyup,      false);
+	addEvent('click',	   onclick,		 false);
+	addEvent('mousedown',  mousedown,	 false);
+	addEvent('mouseup',	   mouseup,		 false);
+	addEvent('mousemove',  mousemove,	 false);
+	// addEvent('touchstart',ontouchstart,	false);
+	// addEvent('touchmove',	ontouchmove,	false);
 	return input;
 }

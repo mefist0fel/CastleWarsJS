@@ -29,7 +29,8 @@ function vMult(v, m) { // m - float
 }
 function vInRect(v, rect) { // rect is arr[4] description of AABB rect
 	return (v[0] >= rect[0] && v[0] <= rect[2] && v[1] >= rect[1] && v[1] <= rect[3]);
-}function Input(rect) {
+}
+function Input(rect) {
 	//  KEY KODES
 	//	BACKSPACE: 8,
 	//	TAB:       9,	RETURN:   13,
@@ -124,6 +125,7 @@ function vInRect(v, rect) { // rect is arr[4] description of AABB rect
 	document.addEventListener('contextmenu', preventmenu,	false);
 	return input;
 }
+
 var url = window.URL || window.webkitURL;
 
 function playSound(params) {
@@ -153,7 +155,8 @@ function playString(str) {
 }
 //playSound([3,,0.3708,0.5822,0.3851,0.0584,,-0.0268,,,,-0.0749,0.7624,,,,,,1,,,,,0.5]); return false;
 //playSound([1,,0.3201,,0.4743,0.3202,,0.0833,,0.4207,0.4278,,,,,,,,1,,,,,0.5]); return false;
-//playSound([0,,0.1812,,0.1349,0.4524,,0.2365,,,,,,0.0819,,,,,1,,,,,0.5]); return false;/**
+//playSound([0,,0.1812,,0.1349,0.4524,,0.2365,,,,,,0.0819,,,,,1,,,,,0.5]); return false;
+/**
  * SfxrParams
  *
  * Copyright 2010 Thomas Vian
@@ -720,7 +723,8 @@ function getFactionColor(factionId) {
 		default:	
 			return '#555555'; // neutral
 	}
-}const unitSize = 6;
+}
+const unitSize = 6;
 const unitSpeed = 100;
 
 function CreateUnit(x, y, factionId, target) {
@@ -771,7 +775,8 @@ function removeItem(array, item) {
 	if (index > -1) {
 		array.splice(index, 1);
 	}
-}                   
+}
+                   
 	const reloadTime = 1.0;
 	const playerFaction = 0;
 	var now,
@@ -867,3 +872,4 @@ function removeItem(array, item) {
 		requestAnimationFrame(frame);
 	}
 	requestAnimationFrame(frame);
+	

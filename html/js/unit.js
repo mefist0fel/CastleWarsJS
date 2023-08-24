@@ -33,17 +33,6 @@ function CreateUnit(x, y, factionId, target) {
 	return unit;
 }
 
-function getFactionColor(factionId) {
-	switch (factionId) {
-		case 0: return '#0000FF'; // player
-		case 1: return '#FF0000'; // enemy
-		case 2: return '#00FF00'; // enemy 2
-		case -1:
-		default:	
-			return '#555555'; // neutral
-	}
-}
-
 function removeItem(array, item) {
 	const index = array.indexOf(item);
 	if (index > -1) {
