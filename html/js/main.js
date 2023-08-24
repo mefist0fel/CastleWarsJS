@@ -82,6 +82,8 @@
 		return null;
 	}
 
+	let animationFrameFunction = requestAnimationFrame
+
 	function frame() {
 		now = timestamp();
 		dt = Math.min(1, (now - time) / 1000);
@@ -91,7 +93,7 @@
 		time = now;
 		update(dt);
 		render(dt);
-		requestAnimationFrame(frame);
+		animationFrameFunction(frame);
 	}
-	requestAnimationFrame(frame);
+	animationFrameFunction(frame);
 	

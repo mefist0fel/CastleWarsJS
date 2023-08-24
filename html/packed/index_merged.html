@@ -10,7 +10,7 @@
 			margin: 0;
 		}
 		canvas {
-			background-color:#ffffff;
+			background-color:0;
 			display: block;
 			margin: 0px auto;
 		}
@@ -20,7 +20,7 @@
 		<canvas id="a"></canvas>
 	</body>
 	<script type="text/javascript">
-
+               // basic vector2[x, y] functons
 function vAdd(av, bv) {
 	return [av[0] + bv[0], av[1] + bv[1]];
 }
@@ -65,7 +65,7 @@ function Input(rect) {
 	//	ZERO:     48, ONE: 49, TWO: 50, THREE: 51, FOUR: 52, FIVE: 53, SIX: 54, SEVEN: 55, EIGHT: 56, NINE: 57,
 	//	A:        65, B: 66, C: 67, D: 68, E: 69, F: 70, G: 71, H: 72, I: 73, J: 74, K: 75, L: 76, M: 77, N: 78, O: 79, P: 80, Q: 81, R: 82, S: 83, T: 84, U: 85, V: 86, W: 87, X: 88, Y: 89, Z: 90,
 	//	TILDA:    192
-	
+
 	var input = {
 		key: [200],
 		mouseLeftDown: false,
@@ -136,20 +136,20 @@ function Input(rect) {
 	// function ontouchmove(event) {
 	// }
 
+	addEvent('contextmenu', preventmenu);
+
+	addEvent('keydown',    onkeydown );
+	addEvent('keyup',      onkeyup   );
+	addEvent('click',	   onclick   );
+	addEvent('mousedown',  mousedown );
+	addEvent('mouseup',	   mouseup   );
+	addEvent('mousemove',  mousemove );
+	// addEvent('touchstart',ontouchstart);
+	// addEvent('touchmove',	ontouchmove);
+
 	function addEvent(event, func) {
 		document.addEventListener(event, func, false)
 	}
-	
-	addEvent('contextmenu', preventmenu, false);
-
-	addEvent('keydown',    onkeydown,    false);
-	addEvent('keyup',      onkeyup,      false);
-	addEvent('click',	   onclick,		 false);
-	addEvent('mousedown',  mousedown,	 false);
-	addEvent('mouseup',	   mouseup,		 false);
-	addEvent('mousemove',  mousemove,	 false);
-	// addEvent('touchstart',ontouchstart,	false);
-	// addEvent('touchmove',	ontouchmove,	false);
 	return input;
 }
 
@@ -171,7 +171,7 @@ function playSound(params) {
     console.log(e.message);
   }
 }
-      
+
 function playString(str) {
    var temp = str.split(",");
    var params = new Array();
@@ -707,16 +707,16 @@ function CreateCastle(x, y, factionId = -1) {
 					this.sendTroopTime += troopSendDelay;
 				} else {
 					this.target = null;
-				} 
+				}
 			}
 		},
-		
+
 		contains(point) {
 			let pos = castle.pos;
 			return (
-				pos[0] - castleSize < point[0] && 
-				pos[1] - castleSize < point[1] && 
-				pos[0] + castleSize > point[0] && 
+				pos[0] - castleSize < point[0] &&
+				pos[1] - castleSize < point[1] &&
+				pos[0] + castleSize > point[0] &&
 				pos[1] + castleSize > point[1])
 		},
 		attack(factionId) {
@@ -747,7 +747,7 @@ function getFactionColor(factionId) {
 		case 1: return '#FF0000'; // enemy
 		case 2: return '#00FF00'; // enemy 2
 		case -1:
-		default:	
+		default:
 			return '#555555'; // neutral
 	}
 }
@@ -792,7 +792,7 @@ function removeItem(array, item) {
 		array.splice(index, 1);
 	}
 }
-                   
+
 	const reloadTime = 1.0;
 	const playerFaction = 0;
 	var now,
@@ -876,6 +876,8 @@ function removeItem(array, item) {
 		return null;
 	}
 
+	let animationFrameFunction = requestAnimationFrame
+
 	function frame() {
 		now = timestamp();
 		dt = Math.min(1, (now - time) / 1000);
@@ -885,9 +887,8 @@ function removeItem(array, item) {
 		time = now;
 		update(dt);
 		render(dt);
-		requestAnimationFrame(frame);
+		animationFrameFunction(frame);
 	}
-	requestAnimationFrame(frame);
-
+	animationFrameFunction(frame);
 	</script>
 </html>
