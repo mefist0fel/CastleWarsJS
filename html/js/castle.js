@@ -17,6 +17,9 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		max: 100,
 		reloadTime: 1,
 		sendTroopTime: 0,
+		neibghors: [],
+		distance: 0,
+		pathCastle: null,
 		draw() {
 			canvas.fillStyle = getFactionColor(castle.faction);
 			let size = sizes[this.level];
@@ -31,6 +34,21 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			canvas.fillStyle = '#FFFFFF';// white
 			let size = sizes[this.level] + 5;
 			canvas.fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
+			// Move
+			canvas.fillStyle = '#FF00FF';
+			castles.forEach(c => {
+				if (c.pathCastle != null) {
+					let size = sizes[c.level] + 5;
+					canvas.fillRect (c.pos[0] - size, c.pos[1] - size, size + size, size + size)
+				}
+			});
+
+			// Debug
+			// canvas.fillStyle = '#FF00FF';
+			// castle.neibghors.forEach(neigbhorCastle => {
+			// 	let size = sizes[neigbhorCastle.level] + 5;
+			// 	canvas.fillRect (neigbhorCastle.pos[0] - size, neigbhorCastle.pos[1] - size, size + size, size + size)
+			// });
 		},
 		upgrade() {
 			if (this.lives >= upgradeCost[castle.level]) {
@@ -109,4 +127,42 @@ function getCastle(pos) {
 		}
 	}
 	return null;
+}
+
+function findNeibghors(maxDistance) {
+	for(var i = 0; i < castles.length; i++) {
+		for(var j = 0; j < castles.length; j++) {
+			if (i != j && distance(castles[i].pos, castles[j].pos) < maxDistance) {
+				castles[i].neibghors.push(castles[j]);
+			}
+		}
+	}
+}
+
+function findAvailableForMoveCastles(startCastle) {
+	castles.forEach(
+		castle => {
+			castle.distance = 99999
+			castle.pathCastle = null
+		})
+	if (startCastle == null) {
+		return
+	}
+	let openList = []
+	openList.push(startCastle)
+	startCastle.distance = 0
+	while (openList.length > 0) {
+		let castle = openList.pop()
+		castle.neibghors.forEach(
+			nCastle => {
+				let distanceFromStart = castle.distance + distance(castle.pos, nCastle.pos)
+				if (nCastle.distance > distanceFromStart) {
+					nCastle.distance = distanceFromStart
+					nCastle.pathCastle = castle
+					if (nCastle.faction == startCastle.faction) {
+						openList.push(nCastle)
+					}
+				}
+			})
+	}
 }

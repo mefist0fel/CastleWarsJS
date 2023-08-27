@@ -26,6 +26,7 @@
 			CreateCastle(i * 200 + 500, j * 200 + 400)
 		}
 	}
+	findNeibghors(300);
 
 	var input = Input(rect)
 	gameObjects.push(input)
@@ -65,6 +66,7 @@
 	function update(dt) {
 		if (input.mouseLeftDown) {
 			selectedCastle = getCastle(input.mousePosition);
+			findAvailableForMoveCastles(selectedCastle)
 		}
 		if (input.mouseRightDown) {
 			let target = getCastle(input.mousePosition);
