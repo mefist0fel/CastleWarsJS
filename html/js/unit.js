@@ -1,5 +1,5 @@
-const unitSize = 6;
-const unitSpeed = 100;
+const unitSize = 1;
+const unitSpeed = 10;
 const zeroVector = [0, 0];
 
 function CreateUnit(x, y, factionId, pathToTarget) {
@@ -13,7 +13,7 @@ function CreateUnit(x, y, factionId, pathToTarget) {
 		lives: 1,
 		draw(canvas) {
 			canvas.fillStyle = getFactionColor(unit.faction);
-			canvas.fillRect (unit.pos[0] - unitSize, unit.pos[1] - unitSize, unitSize + unitSize, unitSize + unitSize)
+			fillRect (unit.pos[0] - unitSize, unit.pos[1] - unitSize, unitSize + unitSize, unitSize + unitSize)
 		},
 		update(dt) {
 			// move to point

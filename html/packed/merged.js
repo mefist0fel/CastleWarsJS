@@ -114,7 +114,7 @@ function Input(rect) {
 	// function ontouchmove(event) {
 	// }
 
-	addEvent('contextmenu', preventmenu);
+	// addEvent('contextmenu', preventmenu);
 
 	addEvent('keydown',    onkeydown );
 	addEvent('keyup',      onkeyup   );
@@ -643,36 +643,64 @@ window['jsfxr'] = function(settings) {
   }
   return output;
 }
-const castleSize = 40;
-const selectionHeight = 45;
+const castleSize = 3;
 const troopSendDelay = 0.2;
+var castles = []
 
-function CreateCastle(x, y, factionId = -1) {
+function CreateCastle(x, y, factionId = -1, level=0) {
+	const sizes = [1, 2, 3];
+	const spawn = [1, 2, 3];
+	const upgradeCost = [15, 20, 999]
 	var castle = {
 		pos: [x, y],
 		faction: factionId,
 		attackCount: 0,
+		pathToTarget: null,
 		target: null,
+		level: level,
 		lives: 10,
 		max: 100,
 		reloadTime: 1,
 		sendTroopTime: 0,
-		draw(canvas) {
+		neibghors: [],
+		distance: 0,
+		pathCastle: null,
+		draw() {
 			canvas.fillStyle = getFactionColor(castle.faction);
-			canvas.fillRect (castle.pos[0] - castleSize, castle.pos[1] - castleSize, castleSize + castleSize, castleSize + castleSize)
+			let size = sizes[this.level];
+			fillRect(castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
 			canvas.textAlign = 'center';
-			canvas.fillText(castle.lives, castle.pos[0], castle.pos[1] - 50);
+			fillText(castle.lives, castle.pos[0], castle.pos[1] - size - 1);
+			// upgrade marker
+			if (castle.lives >= upgradeCost[castle.level]) {
+				fillRect (castle.pos[0] + size + size, castle.pos[1] - size - size - 1, 1, 1)
+			}
 		},
-		drawSelection(canvas) {
+		drawSelection() {
 			canvas.fillStyle = '#FFFFFF';// white
-			canvas.fillRect (castle.pos[0] - selectionHeight, castle.pos[1] - selectionHeight, selectionHeight + selectionHeight, selectionHeight + selectionHeight)
+			let size = sizes[this.level] + 1;
+			fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
+			// Move
+			canvas.fillStyle = '#FF00FF';
+			castles.forEach(c => {
+				if (c.pathCastle != null) {
+					let size = sizes[c.level] + 1;
+					fillRect(c.pos[0] - size, c.pos[1] - size, size + size, size + size)
+				}
+			});
+		},
+		upgrade() {
+			if (this.lives >= upgradeCost[castle.level]) {
+				this.lives -= upgradeCost[castle.level]
+				this.level += 1
+			}
 		},
 		update(dt) {
-			castle.reloadTime -= dt;
-			if (castle.reloadTime <= 0) {
-				castle.reloadTime = reloadTime;
-				if (castle.faction >= 0 && castle.lives < castle.max) {
-					castle.lives += 1;
+			this.reloadTime -= dt;
+			if (this.reloadTime <= 0) {
+				this.reloadTime = reloadTime;
+				if (this.faction >= 0 && castle.lives < castle.max) {
+					this.lives += spawn[this.level];
 				}
 			}
 			if (this.sendTroopTime > 0) {
@@ -681,7 +709,7 @@ function CreateCastle(x, y, factionId = -1) {
 				if (this.lives > 0 && this.attackCount > 0) {
 					this.lives -= 1;
 					this.attackCount -= 1;
-					CreateUnit(this.pos[0], this.pos[1], this.faction, this.target);
+					CreateUnit(this.pos[0], this.pos[1], this.faction, this.pathToTarget);
 					this.sendTroopTime += troopSendDelay;
 				} else {
 					this.target = null;
@@ -689,33 +717,44 @@ function CreateCastle(x, y, factionId = -1) {
 			}
 		},
 		
-		contains(point) {
+		contains(x, y) {
 			let pos = castle.pos;
 			return (
-				pos[0] - castleSize < point[0] && 
-				pos[1] - castleSize < point[1] && 
-				pos[0] + castleSize > point[0] && 
-				pos[1] + castleSize > point[1])
+				pos[0] - castleSize < x && 
+				pos[1] - castleSize < y && 
+				pos[0] + castleSize > x && 
+				pos[1] + castleSize > y)
 		},
 		attack(factionId) {
-			if (castle.faction == factionId) {
-				castle.lives += 1;
+			if (this.faction == factionId) {
+				this.lives += 1;
 			} else {
-				if (castle.lives <= 0) {
-					castle.faction = factionId;
-					castle.lives = 1;
+				if (this.lives <= 0) {
+					this.faction = factionId;
+					this.lives = 1;
 				} else {
-					castle.lives -= 1;
+					this.lives -= 1;
 				}
 			}
 		},
 		sendArmy(target) {
+			if (target == null || target.pathCastle == null)
+				return
+			
 			this.target = target
 			this.attackCount = this.lives / 2
+			let pathToTarget = []
+			pathToTarget.push(target)
+			while (target.pathCastle != null) {
+				target = target.pathCastle
+				pathToTarget.push(target)
+			}
+			this.pathToTarget = pathToTarget
 		},
 	}
 	gameObjects.push(castle)
 	drawObjects.push(castle)
+	castles.push(castle)
 	return castle;
 }
 
@@ -729,35 +768,97 @@ function getFactionColor(factionId) {
 			return '#555555'; // neutral
 	}
 }
-const unitSize = 6;
-const unitSpeed = 100;
 
-function CreateUnit(x, y, factionId, target) {
-	var delta = vSub(target.pos, [x, y])
-	var direction = vNorm(delta)
-	var distance = magnitude(delta)
+function getCastle(pos) {
+	let
+		x = (pos[0] - centerX) / screenScale,
+		y = (pos[1] - centerY) / screenScale
 
+	for(var i = 0; i < castles.length; i++) {
+		if (castles[i].contains(x, y)) {
+			return castles[i];
+		}
+	}
+	return null;
+}
+
+function findNeibghors(maxDistance) {
+	for(var i = 0; i < castles.length; i++) {
+		for(var j = 0; j < castles.length; j++) {
+			if (i != j && distance(castles[i].pos, castles[j].pos) < maxDistance) {
+				castles[i].neibghors.push(castles[j]);
+			}
+		}
+	}
+}
+
+function findAvailableForMoveCastles(startCastle) {
+	castles.forEach(
+		castle => {
+			castle.distance = 99999
+			castle.pathCastle = null
+		})
+	if (startCastle == null) {
+		return
+	}
+	let openList = []
+	openList.push(startCastle)
+	startCastle.distance = 0
+	while (openList.length > 0) {
+		let castle = openList.pop()
+		castle.neibghors.forEach(
+			nCastle => {
+				let distanceFromStart = castle.distance + distance(castle.pos, nCastle.pos)
+				if (nCastle.distance > distanceFromStart) {
+					nCastle.distance = distanceFromStart
+					nCastle.pathCastle = castle
+					if (nCastle.faction == startCastle.faction) {
+						openList.push(nCastle)
+					}
+				}
+			})
+	}
+}
+const unitSize = 1;
+const unitSpeed = 10;
+const zeroVector = [0, 0];
+
+function CreateUnit(x, y, factionId, pathToTarget) {
 	var unit = {
 		pos: [x, y],
-		velocity: vMult(direction, unitSpeed),
-		lifeTime: distance / unitSpeed,
+		velocity: zeroVector,
+		moveTime: 0,
 		faction: factionId,
-		target: target,
+		target: null,
+		path: [...pathToTarget],
 		lives: 1,
 		draw(canvas) {
 			canvas.fillStyle = getFactionColor(unit.faction);
-			canvas.fillRect (unit.pos[0] - unitSize, unit.pos[1] - unitSize, unitSize + unitSize, unitSize + unitSize)
+			fillRect (unit.pos[0] - unitSize, unit.pos[1] - unitSize, unitSize + unitSize, unitSize + unitSize)
 		},
 		update(dt) {
+			// move to point
 			unit.pos = vAdd(unit.pos, vMult(unit.velocity, dt))
-			unit.lifeTime -= dt
-			if (unit.lifeTime <= 0) {
-				target.attack(unit.faction)
-				// kill
-				removeItem(gameObjects, unit)
-				removeItem(drawObjects, unit)
+			unit.moveTime -= dt
+			// if movement ended - check do we have path or this is the end point of path
+			if (unit.moveTime <= 0) {
+				if (unit.path.length > 0) {
+					// get next point from path stack
+					unit.target = unit.path.pop()
+					var delta = vSub(unit.target.pos, unit.pos)
+					var direction = vNorm(delta)
+					var distance = magnitude(delta)
+					unit.velocity = vMult(direction, unitSpeed)
+					unit.moveTime = distance / unitSpeed
+				} else {
+					// attack and
+					unit.target.attack(unit.faction)
+					// kill
+					removeItem(gameObjects, unit)
+					removeItem(drawObjects, unit)
+				}
 			}
-		}
+		},
 	}
 	gameObjects.push(unit)
 	drawObjects.push(unit)
@@ -770,101 +871,126 @@ function removeItem(array, item) {
 		array.splice(index, 1);
 	}
 }
-                   
-	const reloadTime = 1.0;
-	const playerFaction = 0;
-	var now,
-		dt = 0,
-		time = timestamp(),
-		reloadTimer = reloadTime,
-		step = 1/30,
-		width = 1024,
-		height = 768;
+				
+const reloadTime = 1.0;
+const playerFaction = 0;
+var now,
+	dt = 0,
+	time = timestamp(),
+	reloadTimer = reloadTime,
+	step = 1/30,
+	canvasElement = document.getElementById('a'),
+	canvas = canvasElement.getContext('2d'),
+	docElement = document.documentElement
 
-	// init
-	var canvasElement = document.getElementById('a');
-	var canvas = canvasElement.getContext('2d');
-	canvasElement.width = width;
-	canvasElement.height = height;
-	rect = canvasElement.getBoundingClientRect();
-	var selectedCastle = null;
+UpdateCanvasSize()
 
-	var gameObjects = [];
-	var drawObjects = [];
-	var castles = [];
-	castles.push(CreateCastle(300, 300, 0))
-	castles.push(CreateCastle(300, 500))
-	castles.push(CreateCastle(700, 500, 1))
-	castles.push(CreateCastle(700, 300))
+// init
+let rect = canvasElement.getBoundingClientRect();
+var selectedCastle = null;
 
-	var input = Input(rect)
-	gameObjects.push(input)
-	//var camera = Camera();
-	//var player = Hero();
-	// setMoveDirection(45);
+var gameObjects = [];
+var drawObjects = [];
+CreateCastle(-40, 0, 0, 2)
+CreateCastle(40, 0, 1, 2)
+for(var i = -1; i < 2; i++) {
+	for(var j = -1; j < 2; j++) {
+		CreateCastle(i * 20, j * 20)
+	}
+}
+findNeibghors(30);
 
-	function timestamp() {
-		let perf = window.performance;
-		return perf && perf.now ? perf.now() : new Date().getTime();
+var input = Input(rect)
+gameObjects.push(input)
+
+function timestamp() {
+	let perf = window.performance;
+	return perf && perf.now ? perf.now() : new Date().getTime();
+}
+
+function render(dt) {
+	// clear
+	canvas.fillStyle    = '#101010';  // black
+	canvas.fillRect ( 0, 0, width, height);
+	// test
+	// canvas.fillStyle    = '#FFFFFF';  // white
+	// canvas.fillRect (10, 10, 100, 100)
+
+	// Selected castle
+	if (selectedCastle != null) {
+		selectedCastle.drawSelection(canvas);
 	}
 
-	function render(dt) {
-		// clear
-		canvas.fillStyle    = '#101010';  // black
-		canvas.fillRect ( 0, 0, width, height);
-		// test
-		// canvas.fillStyle    = '#FFFFFF';  // white
-		// canvas.fillRect (10, 10, 100, 100)
+	// castles
+	drawObjects.forEach(g => g.draw(canvas));
 
-		// Selected castle
-		if (selectedCastle != null) {
-			selectedCastle.drawSelection(canvas);
-		}
+	// help
+	// canvas.font = "14pt Arial";
+	// canvas.fillText("Q / E - Rotate level", 10, 30)
+	// canvas.fillText("Z / X - change height constant", 10, 50)
+	// canvas.fillText("dt " + dt, 10, 30)
+}
 
-		// castles
-		drawObjects.forEach(g => g.draw(canvas));
-
-		// help
-		canvas.font = "14pt Arial";
-		// canvas.fillText("Q / E - Rotate level", 10, 30)
-		// canvas.fillText("Z / X - change height constant", 10, 50)
-		// canvas.fillText("C / V - c//hange tile aspect", 10, 50)
-		// canvas.fillText("dt " + dt, 10, 30)
+function update(dt) {
+	if (input.mouseLeftDown) {
+		selectedCastle = getCastle(input.mousePosition);
+		findAvailableForMoveCastles(selectedCastle)
 	}
-
-	function update(dt) {
-		if (input.mouseLeftDown) {
-			selectedCastle = getCastle(input.mousePosition);
-		}
-		if (input.mouseRightDown) {
-			let target = getCastle(input.mousePosition);
-			if (selectedCastle != null && target != null) {
+	if (input.mouseRightDown) {
+		let target = getCastle(input.mousePosition);
+		if (selectedCastle != null && target != null) {
+			if (selectedCastle == target) {
+				selectedCastle.upgrade()
+			} else {
 				selectedCastle.sendArmy(target)
 			}
 		}
-		gameObjects.forEach(g => g.update(dt));
 	}
+	gameObjects.forEach(g => g.update(dt));
+}
 
-	function getCastle(pos) {
-		for(var i = 0; i < castles.length; i++) {
-			if (castles[i].contains(pos)) {
-				return castles[i];
-			}
-		}
-		return null;
+let animationFrameFunction = requestAnimationFrame
+
+function frame() {
+	now = timestamp();
+	dt = Math.min(1, (now - time) / 1000);
+	if (dt > step) {
+		dt = step;
 	}
-
-	let animationFrameFunction = requestAnimationFrame
-
-	function frame() {
-		now = timestamp();
-		dt = Math.min(1, (now - time) / 1000);
-		if (dt > step) {
-			dt = step;
-		}
-		time = now;
-		update(dt);
-		render(dt);
-		animationFrameFunction(frame)
+	time = now;
+	update(dt);
+	render(dt);
+	animationFrameFunction(frame);
+	// update canvas on window change
+	if (width != docElement.clientWidth || height != docElement.clientHeight) {
+		UpdateCanvasSize()
 	}
-	animationFrameFunction(frame)
+}
+animationFrameFunction(frame);
+
+function UpdateCanvasSize() {
+	width = docElement.clientWidth
+	height = docElement.clientHeight
+	minSize = Math.min(width, height)
+
+	centerX = width * 0.5
+	centerY = height * 0.5
+	screenScale = minSize * 0.01 // find size of 1/10 cell
+
+	canvasElement.width = width
+	canvasElement.height = height
+
+	let fontSize = 24.0
+	if (height > width) {
+		fontSize *= height / width
+	}
+	canvas.font = parseInt(fontSize) + "pt Arial"
+}
+
+function fillRect(x, y, w, h) {
+	canvas.fillRect (x * screenScale + centerX, y * screenScale + centerY, w * screenScale, h * screenScale)
+}
+
+function fillText(text, x, y) {
+	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
+}

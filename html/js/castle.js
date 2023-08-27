@@ -1,10 +1,9 @@
-const castleSize = 40;
-const selectionHeight = 45;
+const castleSize = 3;
 const troopSendDelay = 0.2;
 var castles = []
 
 function CreateCastle(x, y, factionId = -1, level=0) {
-	const sizes = [20, 30, 40];
+	const sizes = [1, 2, 3];
 	const spawn = [1, 2, 3];
 	const upgradeCost = [15, 20, 999]
 	var castle = {
@@ -24,32 +23,26 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		draw() {
 			canvas.fillStyle = getFactionColor(castle.faction);
 			let size = sizes[this.level];
-			canvas.fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
+			fillRect(castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
 			canvas.textAlign = 'center';
-			canvas.fillText(castle.lives, castle.pos[0], castle.pos[1] - 50);
+			fillText(castle.lives, castle.pos[0], castle.pos[1] - size - 1);
+			// upgrade marker
 			if (castle.lives >= upgradeCost[castle.level]) {
-				canvas.fillRect (castle.pos[0] + size + 5, castle.pos[1] - size - 15, 10, 10)
+				fillRect (castle.pos[0] + size + size, castle.pos[1] - size - size - 1, 1, 1)
 			}
 		},
 		drawSelection() {
 			canvas.fillStyle = '#FFFFFF';// white
-			let size = sizes[this.level] + 5;
-			canvas.fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
+			let size = sizes[this.level] + 1;
+			fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
 			// Move
 			canvas.fillStyle = '#FF00FF';
 			castles.forEach(c => {
 				if (c.pathCastle != null) {
-					let size = sizes[c.level] + 5;
-					canvas.fillRect (c.pos[0] - size, c.pos[1] - size, size + size, size + size)
+					let size = sizes[c.level] + 1;
+					fillRect(c.pos[0] - size, c.pos[1] - size, size + size, size + size)
 				}
 			});
-
-			// Debug
-			// canvas.fillStyle = '#FF00FF';
-			// castle.neibghors.forEach(neigbhorCastle => {
-			// 	let size = sizes[neigbhorCastle.level] + 5;
-			// 	canvas.fillRect (neigbhorCastle.pos[0] - size, neigbhorCastle.pos[1] - size, size + size, size + size)
-			// });
 		},
 		upgrade() {
 			if (this.lives >= upgradeCost[castle.level]) {
@@ -79,13 +72,13 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			}
 		},
 		
-		contains(point) {
+		contains(x, y) {
 			let pos = castle.pos;
 			return (
-				pos[0] - castleSize < point[0] && 
-				pos[1] - castleSize < point[1] && 
-				pos[0] + castleSize > point[0] && 
-				pos[1] + castleSize > point[1])
+				pos[0] - castleSize < x && 
+				pos[1] - castleSize < y && 
+				pos[0] + castleSize > x && 
+				pos[1] + castleSize > y)
 		},
 		attack(factionId) {
 			if (this.faction == factionId) {
@@ -132,8 +125,12 @@ function getFactionColor(factionId) {
 }
 
 function getCastle(pos) {
+	let
+		x = (pos[0] - centerX) / screenScale,
+		y = (pos[1] - centerY) / screenScale
+
 	for(var i = 0; i < castles.length; i++) {
-		if (castles[i].contains(pos)) {
+		if (castles[i].contains(x, y)) {
 			return castles[i];
 		}
 	}

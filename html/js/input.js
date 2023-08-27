@@ -19,7 +19,7 @@ function Input(rect) {
 		mouseLeft: false,
 		mouseRight: false,
 		mousePosition: [0, 0],
-		update (dt) {
+		update (/* dt */) {
 			this.mouseLeftDown = false
 			this.mouseRightDown = false
 		}
@@ -93,8 +93,8 @@ function Input(rect) {
 	// addEvent('touchstart',ontouchstart);
 	// addEvent('touchmove',	ontouchmove);
 
-	function addEvent(event, func) {
-		document.addEventListener(event, func, false)
-	}
 	return input;
+}
+function addEvent(event, func) {
+	doc.addEventListener(event, func, false)
 }

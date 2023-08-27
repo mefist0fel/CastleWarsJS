@@ -6,27 +6,33 @@ var now,
 	time = timestamp(),
 	reloadTimer = reloadTime,
 	step = 1/30,
-	canvasElement = document.getElementById('a'),
+	doc = document,
+	canvasElement = doc.getElementById('a'),
 	canvas = canvasElement.getContext('2d'),
-	docElement = document.documentElement,
-	width = docElement.clientWidth,
-	height = docElement.clientHeight
+	width = 1, // 1024
+	height = 1, // 768
+	minSize = 1, // 768
+	centerX = 1, // 768 * 0.5
+	centerY = 1, // 768 * 0.5
+	screenScale = 1, // find size of 1/10 cell
+	docElement = doc.documentElement
 
 UpdateCanvasSize()
+
 // init
 let rect = canvasElement.getBoundingClientRect();
 var selectedCastle = null;
 
 var gameObjects = [];
 var drawObjects = [];
-CreateCastle(100, 400, 0, 2)
-CreateCastle(900, 400, 1, 2)
+CreateCastle(-40, 0, 0, 2)
+CreateCastle(40, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
 	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 200 + 500, j * 200 + 400)
+		CreateCastle(i * 20, j * 20)
 	}
 }
-findNeibghors(300);
+findNeibghors(30);
 
 var input = Input(rect)
 gameObjects.push(input)
@@ -101,12 +107,24 @@ function UpdateCanvasSize() {
 	height = docElement.clientHeight
 	minSize = Math.min(width, height)
 
+	centerX = width * 0.5
+	centerY = height * 0.5
+	screenScale = minSize * 0.01 // find size of 1/10 cell
+
 	canvasElement.width = width
 	canvasElement.height = height
 
-	let fontSize = 32.0
+	let fontSize = 24.0
 	if (height > width) {
 		fontSize *= height / width
 	}
 	canvas.font = parseInt(fontSize) + "pt Arial"
+}
+
+function fillRect(x, y, w, h) {
+	canvas.fillRect (x * screenScale + centerX, y * screenScale + centerY, w * screenScale, h * screenScale)
+}
+
+function fillText(text, x, y) {
+	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
 }
