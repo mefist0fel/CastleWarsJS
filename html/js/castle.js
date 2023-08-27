@@ -11,6 +11,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		pos: [x, y],
 		faction: factionId,
 		attackCount: 0,
+		pathToTarget: null,
 		target: null,
 		level: level,
 		lives: 10,
@@ -70,7 +71,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 				if (this.lives > 0 && this.attackCount > 0) {
 					this.lives -= 1;
 					this.attackCount -= 1;
-					CreateUnit(this.pos[0], this.pos[1], this.faction, this.target);
+					CreateUnit(this.pos[0], this.pos[1], this.faction, this.pathToTarget);
 					this.sendTroopTime += troopSendDelay;
 				} else {
 					this.target = null;
@@ -99,8 +100,18 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			}
 		},
 		sendArmy(target) {
+			if (target == null || target.pathCastle == null)
+				return
+			
 			this.target = target
 			this.attackCount = this.lives / 2
+			let pathToTarget = []
+			pathToTarget.push(target)
+			while (target.pathCastle != null) {
+				target = target.pathCastle
+				pathToTarget.push(target)
+			}
+			this.pathToTarget = pathToTarget
 		},
 	}
 	gameObjects.push(castle)

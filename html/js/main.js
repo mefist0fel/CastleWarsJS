@@ -7,11 +7,12 @@
 		reloadTimer = reloadTime,
 		step = 1/30,
 		width = 1024,
-		height = 768;
+		height = 768,
+		canvasElement = document.getElementById('a'),
+		canvas = canvasElement.getContext('2d');
+		;
 
 	// init
-	var canvasElement = document.getElementById('a');
-	var canvas = canvasElement.getContext('2d');
 	canvasElement.width = width;
 	canvasElement.height = height;
 	rect = canvasElement.getBoundingClientRect();
