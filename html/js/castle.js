@@ -6,6 +6,7 @@ var castles = []
 function CreateCastle(x, y, factionId = -1, level=0) {
 	const sizes = [20, 30, 40];
 	const spawn = [1, 2, 3];
+	const upgradeCost = [15, 20, 999]
 	var castle = {
 		pos: [x, y],
 		faction: factionId,
@@ -22,10 +23,20 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			canvas.fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
 			canvas.textAlign = 'center';
 			canvas.fillText(castle.lives, castle.pos[0], castle.pos[1] - 50);
+			if (castle.lives >= upgradeCost[castle.level]) {
+				canvas.fillRect (castle.pos[0] + size + 5, castle.pos[1] - size - 15, 10, 10)
+			}
 		},
 		drawSelection() {
 			canvas.fillStyle = '#FFFFFF';// white
-			canvas.fillRect (castle.pos[0] - selectionHeight, castle.pos[1] - selectionHeight, selectionHeight + selectionHeight, selectionHeight + selectionHeight)
+			let size = sizes[this.level] + 5;
+			canvas.fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
+		},
+		upgrade() {
+			if (this.lives >= upgradeCost[castle.level]) {
+				this.lives -= upgradeCost[castle.level]
+				this.level += 1
+			}
 		},
 		update(dt) {
 			this.reloadTime -= dt;

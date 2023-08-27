@@ -69,7 +69,11 @@
 		if (input.mouseRightDown) {
 			let target = getCastle(input.mousePosition);
 			if (selectedCastle != null && target != null) {
-				selectedCastle.sendArmy(target)
+				if (selectedCastle == target) {
+					selectedCastle.upgrade()
+				} else {
+					selectedCastle.sendArmy(target)
+				}
 			}
 		}
 		gameObjects.forEach(g => g.update(dt));
