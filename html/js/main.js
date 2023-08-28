@@ -50,13 +50,17 @@ function render(dt) {
 	// canvas.fillStyle    = '#FFFFFF';  // white
 	// canvas.fillRect (10, 10, 100, 100)
 
+	canvas.fillStyle    = '#333333';  // black
+	canvas.strokeStyle    = '#101010';  // black
+	// map
+	drawMap()
 	// Selected castle
 	if (selectedCastle != null) {
-		selectedCastle.drawSelection(canvas);
+		selectedCastle.drawSelection(canvas)
 	}
 
 	// castles
-	drawObjects.forEach(g => g.draw(canvas));
+	drawObjects.forEach(g => g.draw(canvas))
 
 	// help
 	// canvas.font = "14pt Arial";

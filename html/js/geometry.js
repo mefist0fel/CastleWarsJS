@@ -30,3 +30,20 @@ function vMult(v, m) { // m - float
 function vInRect(v, rect) { // rect is arr[4] description of AABB rect
 	return (v[0] >= rect[0] && v[0] <= rect[2] && v[1] >= rect[1] && v[1] <= rect[3]);
 }
+
+// vector 3 functions
+function CreateVector3(x = 0.0, y = 0.0, z = 0.0) {
+	return [x, y, z]
+}
+
+function AddVector3(a, b) {
+	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
+function SubstractVector3(a, b) {
+	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+function MultiplyVector3(v, multiplier) {
+	return [v[0] * multiplier, v[1] * multiplier, v[2] * multiplier]
+}

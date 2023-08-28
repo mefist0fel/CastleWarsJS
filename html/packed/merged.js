@@ -30,7 +30,23 @@ function vMult(v, m) { // m - float
 function vInRect(v, rect) { // rect is arr[4] description of AABB rect
 	return (v[0] >= rect[0] && v[0] <= rect[2] && v[1] >= rect[1] && v[1] <= rect[3]);
 }
-function Input(rect) {
+
+// vector 3 functions
+function CreateVector3(x = 0.0, y = 0.0, z = 0.0) {
+	return [x, y, z]
+}
+
+function AddVector3(a, b) {
+	return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+
+function SubstractVector3(a, b) {
+	return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+
+function MultiplyVector3(v, multiplier) {
+	return [v[0] * multiplier, v[1] * multiplier, v[2] * multiplier]
+}function Input(rect) {
 	//  KEY KODES
 	//	BACKSPACE: 8,
 	//	TAB:       9,	RETURN:   13,
@@ -130,37 +146,6 @@ function Input(rect) {
 function addEvent(event, func) {
 	doc.addEventListener(event, func, false)
 }
-
-var url = window.URL || window.webkitURL;
-
-function playSound(params) {
-  try {
-    var soundURL = jsfxr(params);
-    var player = new Audio();
-    player.addEventListener('error', function(e) {
-      console.log("Error: " + player.error.code);
-    }, false);
-    player.src = soundURL;
-    player.play();
-    player.addEventListener('ended', function(e) {
-      url.revokeObjectURL(soundURL);
-    }, false);
-  } catch(e) {
-    console.log(e.message);
-  }
-}
-      
-function playString(str) {
-   var temp = str.split(",");
-   var params = new Array();
-   for(var i = 0; i < temp.length; i++) {
-     params[i] = parseFloat(temp[i]);
-   }
-   playSound(params);
-}
-//playSound([3,,0.3708,0.5822,0.3851,0.0584,,-0.0268,,,,-0.0749,0.7624,,,,,,1,,,,,0.5]); return false;
-//playSound([1,,0.3201,,0.4743,0.3202,,0.0833,,0.4207,0.4278,,,,,,,,1,,,,,0.5]); return false;
-//playSound([0,,0.1812,,0.1349,0.4524,,0.2365,,,,,,0.0819,,,,,1,,,,,0.5]); return false;
 /**
  * SfxrParams
  *
@@ -643,7 +628,137 @@ window['jsfxr'] = function(settings) {
   }
   return output;
 }
-const castleSize = 3;
+
+var url = window.URL || window.webkitURL;
+
+function playSound(params) {
+  try {
+    var soundURL = jsfxr(params);
+    var player = new Audio();
+    player.addEventListener('error', function(e) {
+      console.log("Error: " + player.error.code);
+    }, false);
+    player.src = soundURL;
+    player.play();
+    player.addEventListener('ended', function(e) {
+      url.revokeObjectURL(soundURL);
+    }, false);
+  } catch(e) {
+    console.log(e.message);
+  }
+}
+      
+function playString(str) {
+   var temp = str.split(",");
+   var params = new Array();
+   for(var i = 0; i < temp.length; i++) {
+     params[i] = parseFloat(temp[i]);
+   }
+   playSound(params);
+}
+//playSound([3,,0.3708,0.5822,0.3851,0.0584,,-0.0268,,,,-0.0749,0.7624,,,,,,1,,,,,0.5]); return false;
+//playSound([1,,0.3201,,0.4743,0.3202,,0.0833,,0.4207,0.4278,,,,,,,,1,,,,,0.5]); return false;
+//playSound([0,,0.1812,,0.1349,0.4524,,0.2365,,,,,,0.0819,,,,,1,,,,,0.5]); return false;
+let
+	heightMap = [],
+	axeX = [1, 0],
+	axeY = [0, 1],
+	axeZ = [0, 0.5],
+	mapSize = 100,
+	halfMapSize = 50,
+	angle = 0,
+	mapScale = 3
+
+
+for(i = 0; i < mapSize; i++)
+{
+	for(j = 0; j < mapSize; j++)
+	{
+		heightMap.push(Math.random() * 3)
+	}
+}
+
+
+
+function CreateCell(x, y, z) {
+	var cell = {
+		pos: CreateVector3(x, y, z),
+		draw() {
+		},
+		// update(dt) {
+		// 	this.reloadTime -= dt;
+		// 	if (this.reloadTime <= 0) {
+		// 		this.reloadTime = reloadTime;
+		// 		if (this.faction >= 0 && castle.lives < castle.max) {
+		// 			this.lives += spawn[this.level];
+		// 		}
+		// 	}
+		// 	if (this.sendTroopTime > 0) {
+		// 		this.sendTroopTime -= dt;
+		// 	} else {
+		// 		if (this.lives > 0 && this.attackCount > 0) {
+		// 			this.lives -= 1;
+		// 			this.attackCount -= 1;
+		// 			CreateUnit(this.pos[0], this.pos[1], this.faction, this.pathToTarget);
+		// 			this.sendTroopTime += troopSendDelay;
+		// 		} else {
+		// 			this.target = null;
+		// 		} 
+		// 	}
+		// },
+	}
+	// gameObjects.push(castle)
+	drawObjects.push(cell)
+	//castles.push(castle)
+	return cell;
+}
+
+
+function drawMap()
+{
+	for(i = 0; i < mapSize; i++)
+	{
+		for(j = 0; j < mapSize; j++)
+		{
+			drawCell(i - halfMapSize, j - halfMapSize, heightMap[i + j *mapSize])
+		}
+	}
+	angle += 0.001
+	axeX = getAxes(angle)
+	axeY = getAxes(angle + 0.5)
+}
+
+function drawCell(x, y, z)
+{
+	// let pos = vAdd(vAdd(vMult(axeX, x), vMult(axeY, y)), vMult(axeZ, z))
+	// canvas.fillRect (pos[0] * screenScale * mapScale + centerX, pos[1] * screenScale * mapScale + centerY, 10, 10)
+	
+	//canvas.fillStyle = this.color
+	//canvas.strokeStyle = this.color
+	canvas.beginPath()
+	let a = getPos(x - 0.5, y - 0.5, z),
+		b = getPos(x - 0.5, y + 0.5, z),
+		c = getPos(x + 0.5, y + 0.5, z),
+		d = getPos(x + 0.5, y - 0.5, z)
+	//let last = this.screenPoints[this.screenPoints.length - 1]
+	canvas.moveTo(d[0] * screenScale * mapScale + centerX, d[1] * screenScale * mapScale + centerY)
+	canvas.lineTo(a[0] * screenScale * mapScale + centerX, a[1] * screenScale * mapScale + centerY)
+	canvas.lineTo(b[0] * screenScale * mapScale + centerX, b[1] * screenScale * mapScale + centerY)
+	canvas.lineTo(c[0] * screenScale * mapScale + centerX, c[1] * screenScale * mapScale + centerY)
+	canvas.lineTo(d[0] * screenScale * mapScale + centerX, d[1] * screenScale * mapScale + centerY)
+	canvas.closePath()
+	canvas.fill()
+	canvas.stroke()
+}
+
+function getPos(x, y, z) {
+	return vAdd(vAdd(vMult(axeX, x), vMult(axeY, y)), vMult(axeZ, z))
+}
+
+function getAxes(angle) {
+	const pi = 3.1415
+	return [Math.cos(angle * pi), Math.sin(angle * pi) * 0.6]
+}const castleSize = 3;
 const troopSendDelay = 0.2;
 var castles = []
 
@@ -923,13 +1038,17 @@ function render(dt) {
 	// canvas.fillStyle    = '#FFFFFF';  // white
 	// canvas.fillRect (10, 10, 100, 100)
 
+	canvas.fillStyle    = '#333333';  // black
+	canvas.strokeStyle    = '#101010';  // black
+	// map
+	drawMap()
 	// Selected castle
 	if (selectedCastle != null) {
-		selectedCastle.drawSelection(canvas);
+		selectedCastle.drawSelection(canvas)
 	}
 
 	// castles
-	drawObjects.forEach(g => g.draw(canvas));
+	drawObjects.forEach(g => g.draw(canvas))
 
 	// help
 	// canvas.font = "14pt Arial";
