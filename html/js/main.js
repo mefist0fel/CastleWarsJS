@@ -31,7 +31,7 @@ CreateCastle(-40, 0, 0, 2)
 CreateCastle(40, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
 	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 20, j * 20 + 10)
+		CreateCastle(i * 20, j * 20)
 	}
 }
 findNeibghors(30);
@@ -55,12 +55,12 @@ let
 	dd = CreateVector3( 100,-100, -100)
 
 CreateQuad3D(au, bu, cu, du) // top
-CreateQuad3D(ad, bd, cd, dd, rgbToHex(255, 3, 8)) // bottom
+CreateQuad3D(ad, bd, cd, dd, RgbToHex(110, 3, 180)) // bottom
 // sides
-CreateQuad3D(bu, au, ad, bd, rgbToHex(120, 120, 120))
-CreateQuad3D(cu, bu, bd, cd, rgbToHex(180, 180, 180))
-CreateQuad3D(du, cu, cd, dd, rgbToHex(230, 230, 230))
-// CreateQuad3D(au, du, dd, ad, rgbToHex(180, 180, 180))
+CreateQuad3D(bu, au, ad, bd, RgbToHex(120, 120, 120))
+CreateQuad3D(cu, bu, bd, cd, RgbToHex(180, 180, 180))
+CreateQuad3D(du, cu, cd, dd, RgbToHex(230, 230, 230))
+// CreateQuad3D(au, du, dd, ad, RgbToHex(180, 180, 180))
 
 function render() {
 	// clear
@@ -110,7 +110,7 @@ function update(dt) {
 	gameObjects.forEach(g => g.update(dt));
 	// rotate camera
     // currentMatrix = MultiplyMatrix3(currentMatrix, CreateRotationMatrix3(CreateVector3(0, 1, 0), 20.0 * dt))
-	angle += 60 * dt
+	angle += 20 * dt
 	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 30)
     cameraWorldMatrix = MultiplyMatrix3(pitch, CreateRotationMatrix3(CreateVector3(0, 0, 1), angle))
 }
@@ -161,12 +161,4 @@ function fillRect(x, y, w, h) {
 
 function fillText(text, x, y) {
 	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
-}
-
-function rgbToHex(r, g, b, a = 255) {
-    function componentToHex(c) {
-        var hex = c.toString(16)
-        return hex.length == 1 ? "0" + hex : hex;
-    }
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
 }

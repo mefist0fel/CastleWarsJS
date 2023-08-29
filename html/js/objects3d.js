@@ -82,3 +82,11 @@ function CreateQuad3D (a, b, c, d, color = '#FFEEEE') {
     objects3d.push(quad)
     return quad
 }
+
+function RgbToHex(r, g, b, a = 255) {
+    function componentToHex(c) {
+        var hex = c.toString(16)
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
+}
