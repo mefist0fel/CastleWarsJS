@@ -25,9 +25,9 @@ function DrawCamera () {
 
 function Object3DDepthComparator (objectA, objectB) {
 	if (objectA.screenPosition[2] < objectB.screenPosition[2])
-		return -1
-	if (objectA.screenPosition[2] > objectB.screenPosition[2])
 		return 1
+	if (objectA.screenPosition[2] > objectB.screenPosition[2])
+		return -1
 	return 0
 }
 
