@@ -5,8 +5,8 @@ let
 	axeZ = [0, 0.5],
 	mapSize = 100,
 	halfMapSize = 50,
-	angle = 0,
-	mapScale = 3
+	mapAngle = 0,
+	mapScale = 2
 
 
 for(i = 0; i < mapSize; i++)
@@ -62,14 +62,14 @@ function drawMap()
 			drawCell(i - halfMapSize, j - halfMapSize, heightMap[i + j *mapSize])
 		}
 	}
-	angle += 0.001
-	axeX = getAxes(angle)
-	axeY = getAxes(angle + 0.5)
+	mapAngle += 0.004
+	axeX = getAxes(mapAngle)
+	axeY = getAxes(mapAngle + 0.5)
 }
 
 function drawCell(x, y, z)
 {
-	// let pos = vAdd(vAdd(vMult(axeX, x), vMult(axeY, y)), vMult(axeZ, z))
+	// let pos = AddVector2(AddVector2(MultiplyVector2(axeX, x), MultiplyVector2(axeY, y)), MultiplyVector2(axeZ, z))
 	// canvas.fillRect (pos[0] * screenScale * mapScale + centerX, pos[1] * screenScale * mapScale + centerY, 10, 10)
 	
 	//canvas.fillStyle = this.color
@@ -87,11 +87,11 @@ function drawCell(x, y, z)
 	canvas.lineTo(d[0] * screenScale * mapScale + centerX, d[1] * screenScale * mapScale + centerY)
 	canvas.closePath()
 	canvas.fill()
-	canvas.stroke()
+	// canvas.stroke()
 }
 
 function getPos(x, y, z) {
-	return vAdd(vAdd(vMult(axeX, x), vMult(axeY, y)), vMult(axeZ, z))
+	return AddVector2(AddVector2(MultiplyVector2(axeX, x), MultiplyVector2(axeY, y)), MultiplyVector2(axeZ, z))
 }
 
 function getAxes(angle) {

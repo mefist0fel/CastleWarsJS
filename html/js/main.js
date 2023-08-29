@@ -15,7 +15,9 @@ var now,
 	centerX = 1, // 768 * 0.5
 	centerY = 1, // 768 * 0.5
 	screenScale = 1, // find size of 1/10 cell
-	docElement = doc.documentElement
+	docElement = doc.documentElement,
+	currentMatrix = CreateUnitMatrix3(),
+	angle = 0
 
 UpdateCanvasSize()
 
@@ -29,7 +31,7 @@ CreateCastle(-40, 0, 0, 2)
 CreateCastle(40, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
 	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 20, j * 20)
+		CreateCastle(i * 20, j * 20 + 10)
 	}
 }
 findNeibghors(30);
@@ -42,18 +44,32 @@ function timestamp() {
 	return perf && perf.now ? perf.now() : new Date().getTime();
 }
 
-function render(dt) {
+let
+	au = CreateVector3(-100,-100, 100),
+	bu = CreateVector3(-100, 100, 100),
+	cu = CreateVector3( 100, 100, 100),
+	du = CreateVector3( 100,-100, 100),
+	ad = CreateVector3(-100,-100, -100),
+	bd = CreateVector3(-100, 100, -100),
+	cd = CreateVector3( 100, 100, -100),
+	dd = CreateVector3( 100,-100, -100)
+
+CreateQuad3D(au, bu, cu, du) // top
+CreateQuad3D(ad, bd, cd, dd, rgbToHex(255, 3, 8)) // bottom
+// CreateQuad3D(bb, ab, db, cb)
+
+function render() {
 	// clear
 	canvas.fillStyle    = '#101010';  // black
 	canvas.fillRect ( 0, 0, width, height);
-	// test
-	// canvas.fillStyle    = '#FFFFFF';  // white
-	// canvas.fillRect (10, 10, 100, 100)
+
+	// map
+	// drawMap()
+	// camera
+	DrawCamera()
 
 	canvas.fillStyle    = '#333333';  // black
 	canvas.strokeStyle    = '#101010';  // black
-	// map
-	drawMap()
 	// Selected castle
 	if (selectedCastle != null) {
 		selectedCastle.drawSelection(canvas)
@@ -84,7 +100,15 @@ function update(dt) {
 			}
 		}
 	}
+    if (input.key[32]) { // space
+		console.log(objects3d)
+    }
 	gameObjects.forEach(g => g.update(dt));
+	// rotate camera
+    // currentMatrix = MultiplyMatrix3(currentMatrix, CreateRotationMatrix3(CreateVector3(0, 1, 0), 20.0 * dt))
+	angle += 60 * dt
+	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 60)
+    cameraWorldMatrix = MultiplyMatrix3(pitch, CreateRotationMatrix3(CreateVector3(0, 0, 1), angle))
 }
 
 let animationFrameFunction = requestAnimationFrame
@@ -97,7 +121,7 @@ function frame() {
 	}
 	time = now;
 	update(dt);
-	render(dt);
+	render();
 	animationFrameFunction(frame);
 	// update canvas on window change
 	if (width != docElement.clientWidth || height != docElement.clientHeight) {
@@ -123,6 +147,8 @@ function UpdateCanvasSize() {
 		fontSize *= height / width
 	}
 	canvas.font = parseInt(fontSize) + "pt Arial"
+
+	SetCameraSize(width, height)
 }
 
 function fillRect(x, y, w, h) {
@@ -131,4 +157,12 @@ function fillRect(x, y, w, h) {
 
 function fillText(text, x, y) {
 	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
+}
+
+function rgbToHex(r, g, b, a = 255) {
+    function componentToHex(c) {
+        var hex = c.toString(16)
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
 }

@@ -140,7 +140,7 @@ function getCastle(pos) {
 function findNeibghors(maxDistance) {
 	for(var i = 0; i < castles.length; i++) {
 		for(var j = 0; j < castles.length; j++) {
-			if (i != j && distance(castles[i].pos, castles[j].pos) < maxDistance) {
+			if (i != j && Vector2Distance(castles[i].pos, castles[j].pos) < maxDistance) {
 				castles[i].neibghors.push(castles[j]);
 			}
 		}
@@ -163,7 +163,7 @@ function findAvailableForMoveCastles(startCastle) {
 		let castle = openList.pop()
 		castle.neibghors.forEach(
 			nCastle => {
-				let distanceFromStart = castle.distance + distance(castle.pos, nCastle.pos)
+				let distanceFromStart = castle.distance + Vector2Distance(castle.pos, nCastle.pos)
 				if (nCastle.distance > distanceFromStart) {
 					nCastle.distance = distanceFromStart
 					nCastle.pathCastle = castle

@@ -17,17 +17,17 @@ function CreateUnit(x, y, factionId, pathToTarget) {
 		},
 		update(dt) {
 			// move to point
-			unit.pos = vAdd(unit.pos, vMult(unit.velocity, dt))
+			unit.pos = AddVector2(unit.pos, MultiplyVector2(unit.velocity, dt))
 			unit.moveTime -= dt
 			// if movement ended - check do we have path or this is the end point of path
 			if (unit.moveTime <= 0) {
 				if (unit.path.length > 0) {
 					// get next point from path stack
 					unit.target = unit.path.pop()
-					var delta = vSub(unit.target.pos, unit.pos)
-					var direction = vNorm(delta)
+					var delta = SubstractVector2(unit.target.pos, unit.pos)
+					var direction = NormalizeVector2(delta)
 					var distance = magnitude(delta)
-					unit.velocity = vMult(direction, unitSpeed)
+					unit.velocity = MultiplyVector2(direction, unitSpeed)
 					unit.moveTime = distance / unitSpeed
 				} else {
 					// attack and
