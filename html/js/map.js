@@ -1,100 +1,57 @@
 let
 	heightMap = [],
-	pointsMap = [],
+	tileMap = [],
 	axeX = [1, 0],
 	axeY = [0, 1],
 	axeZ = [0, 0.5],
-	mapSize = 30,
-	halfMapSize = 15,
-	mapScale = 80,
-	halfMapScale = 40
+	mapSize = 35,
+	halfMapSize = 17,
+	mapScale = 60,
+	halfMapScale = 30
 
 
 for(i = 0; i < mapSize; i++)
 {
 	for(j = 0; j < mapSize; j++)
 	{
-		heightMap.push(Math.random() * 60)
+		let height = Round(Math.random() * 20) * 4
 
-		let point = CreateVector3()
-		pointsMap.push(point)
-		pointsMap.push(point)
-		pointsMap.push(point)
-		pointsMap.push(point)
+		let position = CreateVector3((i - halfMapSize) * mapScale, (j - halfMapSize) * mapScale)
+		let normalizedDistance = Clamp01(Vector3Length(position) / (mapScale * halfMapSize) * 2.8 - 1)
+		height *= normalizedDistance
+		
+		let isBorder = !(i > 0 && j > 0 && i < mapSize - 1 && j < mapSize - 1);
+		if (isBorder)
+			height = -1
+		heightMap.push(height)
 
-		pointsMap.push(point)
-		pointsMap.push(point)
-		pointsMap.push(point)
-		pointsMap.push(point)
+		tileMap.push(CreateTile3D(position, height, halfMapScale, GetColor(height * 1.3)))
 	}
 }
 
-function SynchHeight() {
-	for(i = 0; i < mapSize; i++)
-	{
-		for(j = 0; j < mapSize; j++)
-		{
-			let index = i * mapSize + j
-			let point = CreateVector3((i - halfMapSize) * mapScale, (j - halfMapSize) * mapScale)
-			let height = heightMap[index] - 100
-			let baseHeight = -100
-	
-			pointsMap[index * 8 + 0] = AddVector3(point, CreateVector3(-halfMapScale,-halfMapScale, baseHeight))
-			pointsMap[index * 8 + 1] = AddVector3(point, CreateVector3(-halfMapScale, halfMapScale, baseHeight))
-			pointsMap[index * 8 + 2] = AddVector3(point, CreateVector3( halfMapScale, halfMapScale, baseHeight))
-			pointsMap[index * 8 + 3] = AddVector3(point, CreateVector3( halfMapScale,-halfMapScale, baseHeight))
-	
-			pointsMap[index * 8 + 4] = AddVector3(point, CreateVector3(-halfMapScale,-halfMapScale, height))
-			pointsMap[index * 8 + 5] = AddVector3(point, CreateVector3(-halfMapScale, halfMapScale, height))
-			pointsMap[index * 8 + 6] = AddVector3(point, CreateVector3( halfMapScale, halfMapScale, height))
-			pointsMap[index * 8 + 7] = AddVector3(point, CreateVector3( halfMapScale,-halfMapScale, height))
-		}
-	}
+function GetColor(level) {
+	// level should be 0-100
+	let value = Max(Min(Round(level), 100), 0)
+	return RgbToHex(120, 150 + value, 120)
 }
-SynchHeight()
 
-for(i = 0; i < mapSize; i++)
+for(i = 1; i < mapSize - 1; i++)
 {
-	for(j = 0; j < mapSize; j++)
+	for(j = 1; j < mapSize - 1; j++)
 	{
-		let index = i * mapSize + j
-		let height = Math.round(heightMap[index])
-		// let point = CreateVector3((i - halfMapSize) * mapScale, (j - halfMapSize) * mapScale, -200)
-		CreateQuad3D( 
-			pointsMap[index * 8 + 4],
-			pointsMap[index * 8 + 5],
-			pointsMap[index * 8 + 6],
-			pointsMap[index * 8 + 7],
-			RgbToHex(120, 140 + height % 10 * 10, 120)
-		)
-		CreateQuad3D( 
-			pointsMap[index * 8 + 0],
-			pointsMap[index * 8 + 1],
-			pointsMap[index * 8 + 5],
-			pointsMap[index * 8 + 4],
-			RgbToHex(120, 100 + height % 10 * 10, 120)
-		)
-		CreateQuad3D( 
-			pointsMap[index * 8 + 1],
-			pointsMap[index * 8 + 2],
-			pointsMap[index * 8 + 6],
-			pointsMap[index * 8 + 5],
-			RgbToHex(120, 80 + height % 10 * 10, 120)
-		)
-		CreateQuad3D( 
-			pointsMap[index * 8 + 2],
-			pointsMap[index * 8 + 3],
-			pointsMap[index * 8 + 7],
-			pointsMap[index * 8 + 6],
-			RgbToHex(120, 100 + height % 10 * 10, 120)
-		)
-		CreateQuad3D( 
-			pointsMap[index * 8 + 3],
-			pointsMap[index * 8 + 0],
-			pointsMap[index * 8 + 4],
-			pointsMap[index * 8 + 7],
-			RgbToHex(120, 120 + height % 10 * 10, 120)
-		)
+		let height = heightMap[GetMapIndex(i, j, mapSize)]
+		tileMap[GetMapIndex(i, j, mapSize)].neigbhors = [
+			heightMap[GetMapIndex(i - 1, j    , mapSize)],
+			heightMap[GetMapIndex(i    , j + 1, mapSize)],
+			heightMap[GetMapIndex(i + 1, j    , mapSize)],
+			heightMap[GetMapIndex(i    , j - 1, mapSize)]
+		]
+		tileMap[GetMapIndex(i, j, mapSize)].sideColors = [
+			GetColor(height * 0.9),
+			GetColor(height * 1.1),
+			GetColor(height * 0.9),
+			GetColor(height * 0.7)
+		]
 	}
 }
 

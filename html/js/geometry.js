@@ -4,6 +4,13 @@ const MIN_NUMBER = Number.MIN_VALUE
 const PI = Math.PI
 const Cos = Math.cos
 const Sin = Math.sin
+const Min = Math.min
+const Max = Math.max
+const Round = Math.round
+
+function Clamp01(value) {
+	return Max(Min(value, 1), 0)
+}
 
 function Vector2InRect(v, rect) { // rect is arr[4] description of AABB rect
 	return (v[0] >= rect[0] && v[0] <= rect[2] && v[1] >= rect[1] && v[1] <= rect[3]);
@@ -94,6 +101,13 @@ function SubstractVector3(a, b) {
 
 function MultiplyVector3(v, multiplier) {
 	return [v[0] * multiplier, v[1] * multiplier, v[2] * multiplier]
+}
+function Vector3Length(v) {
+	return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+}
+
+function Vector3Distance(a, b) {
+	return Vector3Length(SubstractVector3(a, b))
 }
 
 // Matrix

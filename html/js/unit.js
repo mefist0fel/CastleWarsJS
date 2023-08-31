@@ -26,7 +26,7 @@ function CreateUnit(x, y, factionId, pathToTarget) {
 					unit.target = unit.path.pop()
 					var delta = SubstractVector2(unit.target.pos, unit.pos)
 					var direction = NormalizeVector2(delta)
-					var distance = magnitude(delta)
+					var distance = Vector2Length(delta)
 					unit.velocity = MultiplyVector2(direction, unitSpeed)
 					unit.moveTime = distance / unitSpeed
 				} else {
