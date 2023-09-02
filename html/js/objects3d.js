@@ -92,7 +92,7 @@ const tileOffsets = [
 ]
 
 // 3d map cell class
-function CreateTile3D (pos, height, scale, color = '#FFEEEE') {
+function CreateTile3D (pos, height, scale, color = CreateVector3()) {
     var tile = {
 		basePosition: pos,
 		position: AddVector3(pos, CreateVector3(0, 0, height)),
@@ -101,50 +101,67 @@ function CreateTile3D (pos, height, scale, color = '#FFEEEE') {
 		points: CreateQuadArray(),
 		basePoints: CreateQuadArray(),
 		screenPoints: CreateQuadArray(),
+		color: color,
         sideColors:[color, color, color, color],
         neigbhors:[0, 0, 0, 0],
         walls:[CreateQuadArray(), CreateQuadArray(), CreateQuadArray(), CreateQuadArray()],
 		depth: 0,
-		color: color,
-        setHeight(scale) {
-            tile.scale = scale
+        setHeight(height) {
+            this.height = height
+        },
+        setColor(color) {
+            this.color = getColor(color)
+            this.sideColors = [
+                getColor(MultiplyVector3(color, 0.9)),
+                getColor(MultiplyVector3(color, 0.7)),
+                getColor(MultiplyVector3(color, 0.5)),
+                getColor(MultiplyVector3(color, 0.7))
+            ]
         },
         prepareScene () {
             for(let i = 0; i < 4; i++) {
-                tile.points[i] = AddVector3(AddVector3(tile.basePosition, MultiplyVector3(tileOffsets[i], tile.scale)), CreateVector3(0, 0, tile.height))
+                this.points[i] = AddVector3(AddVector3(this.basePosition, MultiplyVector3(tileOffsets[i], this.scale)), CreateVector3(0, 0, this.height))
             }
-            let normPosition = WorldToNormVector3(tile.position)
-            tile.depth = normPosition[2]
+            let normPosition = WorldToNormVector3(this.position)
+            this.depth = normPosition[2]
             for(let i = 0; i < 4; i++) {
-                tile.screenPoints[i] = WorldToScreenVector3(tile.points[i])
+                this.screenPoints[i] = WorldToScreenVector3(this.points[i])
             }
             for(let j = 0; j < 4; j++) {
-                let height = tile.neigbhors[j]
-                if (tile.height < height)
-                    height = tile.height
+                let height = this.neigbhors[j]
+                if (this.height < height)
+                    height = this.height
                 for(let i = 0; i < 4; i++) {
-                    tile.basePoints[i] = AddVector3(AddVector3(tile.basePosition, MultiplyVector3(tileOffsets[i], tile.scale)), CreateVector3(0, 0, height))
+                    this.basePoints[i] = AddVector3(AddVector3(this.basePosition, MultiplyVector3(tileOffsets[i], this.scale)), CreateVector3(0, 0, height))
                 }
-                tile.walls[j][0] = WorldToScreenVector3(tile.points[(j + 1) % 4])
-                tile.walls[j][1] = WorldToScreenVector3(tile.points[(j + 0) % 4])
-                tile.walls[j][2] = WorldToScreenVector3(tile.basePoints[(j + 0) % 4])
-                tile.walls[j][3] = WorldToScreenVector3(tile.basePoints[(j + 1) % 4])
+                this.walls[j][0] = WorldToScreenVector3(this.points[(j + 1) % 4])
+                this.walls[j][1] = WorldToScreenVector3(this.points[(j + 0) % 4])
+                this.walls[j][2] = WorldToScreenVector3(this.basePoints[(j + 0) % 4])
+                this.walls[j][3] = WorldToScreenVector3(this.basePoints[(j + 1) % 4])
             }
         },
         draw () {
             // ignore 0 height tiles
-            if (tile.height <= -1)
+            if (this.height <= -1)
                 return
-            canvas.fillStyle = tile.color
-            DrawQuad(tile.screenPoints)
-            for(let i = 0; i < tile.walls.length; i++) {
-                canvas.fillStyle = tile.sideColors[i]
-                DrawQuad(tile.walls[i])
+            canvas.fillStyle = this.color
+            DrawQuad(this.screenPoints)
+            for(let i = 0; i < this.walls.length; i++) {
+                canvas.fillStyle = this.sideColors[i]
+                DrawQuad(this.walls[i])
             }
         }
     }
     objects3d.push(tile)
     return tile
+
+    function getColor(vector3) {
+        // level should be 0-100
+        let r = Round(Clamp01(vector3[0]) * 255)
+        let g = Round(Clamp01(vector3[1]) * 255)
+        let b = Round(Clamp01(vector3[2]) * 255)
+        return rgbToHex(r, g, b)
+    }
 }
 
 function DrawQuad(points) {
@@ -167,7 +184,7 @@ function CreateQuadArray() {
     return [a, a, a, a]
 }
 
-function RgbToHex(r, g, b, a = 255) {
+function rgbToHex(r, g, b, a = 255) {
     function componentToHex(c) {
         var hex = c.toString(16)
         return hex.length == 1 ? "0" + hex : hex;
