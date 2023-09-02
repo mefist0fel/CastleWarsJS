@@ -92,7 +92,7 @@ const tileOffsets = [
 ]
 
 // 3d map cell class
-function CreateTile3D (pos, height, scale, color = CreateVector3()) {
+function CreateTile3D (pos, height, scale, color, depth = 0) {
     var tile = {
 		basePosition: pos,
 		position: AddVector3(pos, CreateVector3(0, 0, height)),
@@ -123,7 +123,7 @@ function CreateTile3D (pos, height, scale, color = CreateVector3()) {
                 this.points[i] = AddVector3(AddVector3(this.basePosition, MultiplyVector3(tileOffsets[i], this.scale)), CreateVector3(0, 0, this.height))
             }
             let normPosition = WorldToNormVector3(this.position)
-            this.depth = normPosition[2]
+            this.depth = normPosition[2] + depth
             for(let i = 0; i < 4; i++) {
                 this.screenPoints[i] = WorldToScreenVector3(this.points[i])
             }
