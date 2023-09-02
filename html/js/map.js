@@ -7,7 +7,7 @@ let
 	mapScale = 60,
 	halfMapScale = 30
 
-function CreateCellMap(mapSize, scale) {
+function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
 	let map = {
 		heightMap: [],
 		colors: [],
@@ -46,11 +46,11 @@ function CreateCellMap(mapSize, scale) {
 	{
 		for(j = 0; j < map.size; j++)
 		{
-			map.heightMap.push(0)
+			map.heightMap.push(defaultHeight)
 	
 			let position = CreateVector3((i -  mapHalfSize) *  scale, (j - mapHalfSize) * scale)
 			let color = CreateVector3()
-			map.tiles.push(CreateTile3D(position, 0, mapHalfScale, color))
+			map.tiles.push(CreateTile3D(position, defaultHeight, mapHalfScale, color, offset))
 			map.colors.push(color);
 		}
 	}
@@ -90,9 +90,29 @@ function CreateCellMap(mapSize, scale) {
 		}
 		return defaultValue
 	}
+
+	function GetMapIndex(i, j, xFactor = 1, yFactor = 1) {
+		return i * xFactor + j * yFactor;
+	}
 }
 
-var map = CreateCellMap(mapSize, 60)
+function GetColor(level) {
+	// level should be 0-1
+	let r = Clamp01(0.3 + level * 0.1)
+	let g = Clamp01(0.5 + level * 0.5)
+	let b = Clamp01(0.3 + level * 0.1)
+	return CreateVector3(r, g, b)
+}
+
+function applyCastleHeight(tileMap, x , y, castleHeight, size, heightScale = 1) {
+	for(i = 0; i < size; i++) {
+		for(j = 0; j < size; j++) {
+			tileMap.setHeight(x + i, y + j, castleHeight[i * size + j] * heightScale)
+		}
+	}
+}
+
+var map = CreateCellMap(mapSize, 50, 50)
 for(i = 0; i < mapSize; i++)
 {
 	for(j = 0; j < mapSize; j++)
@@ -113,14 +133,49 @@ for(i = 0; i < mapSize; i++)
 }
 map.rebuild()
 
-function GetColor(level) {
-	// level should be 0-1
-	let r = Clamp01(0.3 + level * 0.1)
-	let g = Clamp01(0.5 + level * 0.5)
-	let b = Clamp01(0.3 + level * 0.1)
-	return CreateVector3(r, g, b)
+var castles = CreateCellMap(65, 10)
+for(i = 0; i < 60; i++)
+{
+	for(j = 0; j < 60; j++)
+	{
+		if (i < 30) {
+			castles.setColor(i, j, CreateVector3(0.8, 0.2, 0.2))
+		} else {
+			castles.setColor(i, j, CreateVector3(0.2, 0.2, 0.8))
+		}
+	}
 }
+const
+	_ = -1,
+	L = 0
+// castle
+var small = [
+	_, _, _, _, _,
+	_, 4, 2, 4, _,
+	_, 2, 0, 2, _,
+	_, 4, 2, 4, _,
+	_, _, _, _, _
+]
+// castle
+var medium = [
+	_, 4, 2, 4, _,
+	4, 2, 2, 2, 4,
+	2, 2, 5, 2, 2,
+	4, 2, 2, 2, 4,
+	_, 4, 2, 4, _
+]
+// castle
+var big = [
+	4, 2, 3, 2, 4,
+	2, 7, 5, 7, 2,
+	3, 5, 3, 5, 3,
+	2, 7, 5, 7, 2,
+	4, 2, 3, 2, 4
+]
 
-function GetMapIndex(i, j, xFactor = 1, yFactor = 1) {
-	return i * xFactor + j * yFactor;
-}
+applyCastleHeight(castles, 15, 15, big, 5, 6);
+applyCastleHeight(castles, 35, 15, small, 5, 6);
+applyCastleHeight(castles, 45, 5, small, 5, 6);
+applyCastleHeight(castles, 15, 35, small, 5, 6);
+applyCastleHeight(castles, 35, 35, medium, 5, 6);
+castles.rebuild()
