@@ -1,9 +1,10 @@
 let
 	heightMap = [],
 	tileMap = [],
-	axeX = [1, 0],
-	axeY = [0, 1],
-	axeZ = [0, 0.5],
+
+	castleHeightMap = [],
+	castleTileMap = [],
+
 	mapSize = 35,
 	halfMapSize = 17,
 	mapScale = 60,
@@ -14,10 +15,13 @@ for(i = 0; i < mapSize; i++)
 {
 	for(j = 0; j < mapSize; j++)
 	{
-		let height = Round(Math.random() * 20) * 4
+		let height = Math.random() * 80
 
 		let position = CreateVector3((i - halfMapSize) * mapScale, (j - halfMapSize) * mapScale)
 		let normalizedDistance = Clamp01(Vector3Length(position) / (mapScale * halfMapSize) * 2.8 - 1)
+		// if (normalizedDistance == 0) {
+		//	normalizedDistance = -1
+		// }
 		height *= normalizedDistance
 		
 		let isBorder = !(i > 0 && j > 0 && i < mapSize - 1 && j < mapSize - 1);
@@ -27,12 +31,6 @@ for(i = 0; i < mapSize; i++)
 
 		tileMap.push(CreateTile3D(position, height, halfMapScale, GetColor(height * 1.3)))
 	}
-}
-
-function GetColor(level) {
-	// level should be 0-100
-	let value = Max(Min(Round(level), 100), 0)
-	return RgbToHex(120, 150 + value, 120)
 }
 
 for(i = 1; i < mapSize - 1; i++)
@@ -53,6 +51,12 @@ for(i = 1; i < mapSize - 1; i++)
 			GetColor(height * 0.7)
 		]
 	}
+}
+
+function GetColor(level) {
+	// level should be 0-100
+	let value = Max(Min(Round(level), 100), 0)
+	return RgbToHex(120, 150 + value, 120)
 }
 
 function GetMapIndex(i, j, xFactor = 1, yFactor = 1) {

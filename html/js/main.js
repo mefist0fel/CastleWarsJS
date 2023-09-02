@@ -92,12 +92,11 @@ function update(dt) {
     }
 	gameObjects.forEach(g => g.update(dt));
 	// rotate camera
-    angle += 20 * dt
-	//angle += 0.5 * dt
-
+    //angle += 20 * dt
+    //currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), angle)
+	angle += 0.1 * dt
+	currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), Sin(angle) * 10 + 45)
 	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 40)
-	//currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), Sin(angle) * 20 + 45)
-    currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), angle)
     cameraWorldMatrix = MultiplyMatrix3(pitch, currentMatrix)
 }
 
