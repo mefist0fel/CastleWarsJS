@@ -4,6 +4,13 @@ const MIN_NUMBER = Number.MIN_VALUE
 const PI = Math.PI
 const Cos = Math.cos
 const Sin = Math.sin
+const Min = Math.min
+const Max = Math.max
+const Round = Math.round
+
+function Clamp01(value) {
+	return Max(Min(value, 1), 0)
+}
 
 function Vector2InRect(v, rect) { // rect is arr[4] description of AABB rect
 	return (v[0] >= rect[0] && v[0] <= rect[2] && v[1] >= rect[1] && v[1] <= rect[3]);
@@ -94,6 +101,13 @@ function SubstractVector3(a, b) {
 
 function MultiplyVector3(v, multiplier) {
 	return [v[0] * multiplier, v[1] * multiplier, v[2] * multiplier]
+}
+function Vector3Length(v) {
+	return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+}
+
+function Vector3Distance(a, b) {
+	return Vector3Length(SubstractVector3(a, b))
 }
 
 // Matrix
@@ -843,7 +857,7 @@ function playString(str) {
 // Camera props and function
 var objects3d = [],
     cameraWorldMatrix = CreateUnitMatrix3(),
-    cameraProjectionMatrix = CreateProjectionMatrix4(1.0, 1.0, 1.0, 2.0),
+    cameraProjectionMatrix = CreateProjectionMatrix4(1.0, 1.0, 1.0, 4.0),
     cameraOffset = CreateVector3(0, 0,-1000),
     cameraPosition = CreateVector3(),
     centerOffcet = null,
@@ -866,11 +880,20 @@ function DrawCamera () {
 }
 
 function Object3DDepthComparator (objectA, objectB) {
-	if (objectA.screenPosition[2] < objectB.screenPosition[2])
-		return -1
-	if (objectA.screenPosition[2] > objectB.screenPosition[2])
+	if (objectA.depth < objectB.depth)
 		return 1
+	if (objectA.depth > objectB.depth)
+		return -1
 	return 0
+}
+
+function WorldToNormVector3 (point) {
+    let worldPoint = point
+    worldPoint = AddVector3(worldPoint, MultiplyVector3(cameraPosition, -1.0))
+    worldPoint = MultiplyVector3ToMatrix3(worldPoint, cameraWorldMatrix)
+    worldPoint = AddVector3(worldPoint, cameraOffset)
+    worldPoint = MultiplyVector3ToMatrix4(worldPoint, cameraProjectionMatrix)
+    return worldPoint
 }
 
 function WorldToScreenVector3 (point) {
@@ -887,7 +910,7 @@ function WorldToScreenVector3 (point) {
 function CreateQuad3D (a, b, c, d, color = '#FFEEEE') {
     var quad = {
 		screenPoints: [a, b, c, d],
-		screenPosition: CreateVector3(),
+		depth: 0,
 		color: color,
         setPoints(a, b, c, d, position = null) {
             quad.points = [a, b, c, d]
@@ -897,7 +920,7 @@ function CreateQuad3D (a, b, c, d, color = '#FFEEEE') {
                 quad.position = position
 		},
         prepareScene () {
-            quad.screenPosition = WorldToScreenVector3(quad.position)
+            quad.depth = WorldToScreenVector3(quad.position)[2]
             for(let i = 0; i < quad.screenPoints.length; i++) {
                 quad.screenPoints[i] = WorldToScreenVector3(quad.points[i])
             }
@@ -909,119 +932,245 @@ function CreateQuad3D (a, b, c, d, color = '#FFEEEE') {
                 return
             canvas.fillStyle = quad.color
             canvas.strokeStyle = quad.color
-            canvas.beginPath()
-            let last = quad.screenPoints[quad.screenPoints.length - 1]
-            canvas.moveTo(last[0], last[1])
-            for(let i = 0; i < quad.screenPoints.length; i++) {
-                canvas.lineTo(quad.screenPoints[i][0], quad.screenPoints[i][1])
-            }
-            canvas.closePath()
-            canvas.fill()
-            // canvas.stroke()
+            DrawQuad(quad.screenPoints)
         }
     }
     quad.setPoints(a, b, c, d)
     objects3d.push(quad)
     return quad
+}
+
+const tileOffsets = [
+    CreateVector3(-1,-1),
+    CreateVector3(-1, 1),
+    CreateVector3( 1, 1),
+    CreateVector3( 1,-1)
+]
+
+// 3d map cell class
+function CreateTile3D (pos, height, scale, color = CreateVector3()) {
+    var tile = {
+		basePosition: pos,
+		position: AddVector3(pos, CreateVector3(0, 0, height)),
+		height: height,
+        scale: scale,
+		points: CreateQuadArray(),
+		basePoints: CreateQuadArray(),
+		screenPoints: CreateQuadArray(),
+		color: color,
+        sideColors:[color, color, color, color],
+        neigbhors:[0, 0, 0, 0],
+        walls:[CreateQuadArray(), CreateQuadArray(), CreateQuadArray(), CreateQuadArray()],
+		depth: 0,
+        setHeight(height) {
+            this.height = height
+        },
+        setColor(color) {
+            this.color = getColor(color)
+            this.sideColors = [
+                getColor(MultiplyVector3(color, 0.9)),
+                getColor(MultiplyVector3(color, 0.7)),
+                getColor(MultiplyVector3(color, 0.5)),
+                getColor(MultiplyVector3(color, 0.7))
+            ]
+        },
+        prepareScene () {
+            for(let i = 0; i < 4; i++) {
+                this.points[i] = AddVector3(AddVector3(this.basePosition, MultiplyVector3(tileOffsets[i], this.scale)), CreateVector3(0, 0, this.height))
+            }
+            let normPosition = WorldToNormVector3(this.position)
+            this.depth = normPosition[2]
+            for(let i = 0; i < 4; i++) {
+                this.screenPoints[i] = WorldToScreenVector3(this.points[i])
+            }
+            for(let j = 0; j < 4; j++) {
+                let height = this.neigbhors[j]
+                if (this.height < height)
+                    height = this.height
+                for(let i = 0; i < 4; i++) {
+                    this.basePoints[i] = AddVector3(AddVector3(this.basePosition, MultiplyVector3(tileOffsets[i], this.scale)), CreateVector3(0, 0, height))
+                }
+                this.walls[j][0] = WorldToScreenVector3(this.points[(j + 1) % 4])
+                this.walls[j][1] = WorldToScreenVector3(this.points[(j + 0) % 4])
+                this.walls[j][2] = WorldToScreenVector3(this.basePoints[(j + 0) % 4])
+                this.walls[j][3] = WorldToScreenVector3(this.basePoints[(j + 1) % 4])
+            }
+        },
+        draw () {
+            // ignore 0 height tiles
+            if (this.height <= -1)
+                return
+            canvas.fillStyle = this.color
+            DrawQuad(this.screenPoints)
+            for(let i = 0; i < this.walls.length; i++) {
+                canvas.fillStyle = this.sideColors[i]
+                DrawQuad(this.walls[i])
+            }
+        }
+    }
+    objects3d.push(tile)
+    return tile
+
+    function getColor(vector3) {
+        // level should be 0-100
+        let r = Round(Clamp01(vector3[0]) * 255)
+        let g = Round(Clamp01(vector3[1]) * 255)
+        let b = Round(Clamp01(vector3[2]) * 255)
+        return rgbToHex(r, g, b)
+    }
+}
+
+function DrawQuad(points) {
+    // ignore backface
+    let dot = PointToLine(points[0], points[1], points[2])
+    if (dot > 0)
+        return
+    canvas.beginPath()
+    let last = points[3]
+    canvas.moveTo(last[0], last[1])
+    for(let i = 0; i < 4; i++) {
+        canvas.lineTo(points[i][0], points[i][1])
+    }
+    canvas.closePath()
+    canvas.fill()
+}
+
+function CreateQuadArray() {
+    let a = CreateVector3()
+    return [a, a, a, a]
+}
+
+function rgbToHex(r, g, b, a = 255) {
+    function componentToHex(c) {
+        var hex = c.toString(16)
+        return hex.length == 1 ? "0" + hex : hex;
+    }
+    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
 }let
 	heightMap = [],
-	axeX = [1, 0],
-	axeY = [0, 1],
-	axeZ = [0, 0.5],
-	mapSize = 100,
-	halfMapSize = 50,
-	mapAngle = 0,
-	mapScale = 2
+	tiles = [],
 
+	mapSize = 35,
+	halfMapSize = 17,
+	mapScale = 60,
+	halfMapScale = 30
 
+function CreateCellMap(mapSize, scale) {
+	let map = {
+		heightMap: [],
+		colors: [],
+		tiles: [],
+		size: mapSize,
+		setHeight(x, y, height) {
+			SetElementSafe(this.heightMap, x, y, this.size, height)
+		},
+		getHeight(x, y) {
+			return GetElementSafe(this.heightMap, x, y, this.size, 0)
+		},
+		setColor(x, y, color) {
+			SetElementSafe(this.colors, x, y, this.size, color)
+		},
+		getColor(x, y) {
+			return GetElementSafe(this.colors, x, y, this.size, CreateVector3())
+		},
+		rebuild() {
+			for(i = 0; i < this.size; i++)
+			{
+				for(j = 0; j < this.size; j++)
+				{
+					let index = GetMapIndex(i, j, this.size)
+					this.tiles[index].setHeight(this.heightMap[index])
+					this.tiles[index].setColor(this.colors[index])
+				}
+			}
+		}
+	}
+
+	let
+		mapHalfSize = (mapSize - 1) * 0.5,
+		mapHalfScale = scale * 0.5
+
+	for(i = 0; i < map.size; i++)
+	{
+		for(j = 0; j < map.size; j++)
+		{
+			map.heightMap.push(0)
+	
+			let position = CreateVector3((i -  mapHalfSize) *  scale, (j - mapHalfSize) * scale)
+			let color = CreateVector3()
+			map.tiles.push(CreateTile3D(position, 0, mapHalfScale, color))
+			map.colors.push(color);
+		}
+	}
+
+	for(i = 1; i < map.size - 1; i++)
+	{
+		for(j = 1; j < map.size - 1; j++)
+		{
+			let height = map.heightMap[GetMapIndex(i, j, map.size)]
+			map.tiles[GetMapIndex(i, j, map.size)].neigbhors = [
+				map.heightMap[GetMapIndex(i - 1, j    , map.size)],
+				map.heightMap[GetMapIndex(i    , j + 1, map.size)],
+				map.heightMap[GetMapIndex(i + 1, j    , map.size)],
+				map.heightMap[GetMapIndex(i    , j - 1, map.size)]
+			]
+			map.tiles[GetMapIndex(i, j, mapSize)].sideColors = [
+				GetColor(height * 0.9),
+				GetColor(height * 1.1),
+				GetColor(height * 0.9),
+				GetColor(height * 0.7)
+			]
+		}
+	}
+	return map
+	
+	function SetElementSafe(list, x, y, size, value) {
+		let index = GetMapIndex(x, y, size);
+		if (index >= 0 && index < list.length) {
+			list[index] = value
+		}
+	}
+	
+	function GetElementSafe(list, x, y, size, defaultValue = null) {
+		let index = GetMapIndex(x, y, size);
+		if (index >= 0 && index < list.length) {
+			return list[index]
+		}
+		return defaultValue
+	}
+}
+
+var map = CreateCellMap(mapSize, 60)
 for(i = 0; i < mapSize; i++)
 {
 	for(j = 0; j < mapSize; j++)
 	{
-		heightMap.push(Math.random() * 3)
+		let height = Math.random() * 80
+
+		let position = CreateVector3(i - halfMapSize, j - halfMapSize)
+		let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.8 - 1)
+		height *= normalizedDistance
+		
+		let isBorder = !(i > 0 && j > 0 && i < mapSize - 1 && j < mapSize - 1);
+		if (isBorder)
+			height = -1
+
+		map.setHeight(i, j, height)
+		map.setColor(i, j, GetColor(height / 80))
 	}
 }
+map.rebuild()
 
-
-
-function CreateCell(x, y, z) {
-	var cell = {
-		pos: CreateVector3(x, y, z),
-		draw() {
-		},
-		// update(dt) {
-		// 	this.reloadTime -= dt;
-		// 	if (this.reloadTime <= 0) {
-		// 		this.reloadTime = reloadTime;
-		// 		if (this.faction >= 0 && castle.lives < castle.max) {
-		// 			this.lives += spawn[this.level];
-		// 		}
-		// 	}
-		// 	if (this.sendTroopTime > 0) {
-		// 		this.sendTroopTime -= dt;
-		// 	} else {
-		// 		if (this.lives > 0 && this.attackCount > 0) {
-		// 			this.lives -= 1;
-		// 			this.attackCount -= 1;
-		// 			CreateUnit(this.pos[0], this.pos[1], this.faction, this.pathToTarget);
-		// 			this.sendTroopTime += troopSendDelay;
-		// 		} else {
-		// 			this.target = null;
-		// 		} 
-		// 	}
-		// },
-	}
-	// gameObjects.push(castle)
-	drawObjects.push(cell)
-	//castles.push(castle)
-	return cell;
+function GetColor(level) {
+	// level should be 0-1
+	let r = Clamp01(0.3 + level * 0.1)
+	let g = Clamp01(0.5 + level * 0.5)
+	let b = Clamp01(0.3 + level * 0.1)
+	return CreateVector3(r, g, b)
 }
 
-
-function drawMap()
-{
-	for(i = 0; i < mapSize; i++)
-	{
-		for(j = 0; j < mapSize; j++)
-		{
-			drawCell(i - halfMapSize, j - halfMapSize, heightMap[i + j *mapSize])
-		}
-	}
-	mapAngle += 0.004
-	axeX = getAxes(mapAngle)
-	axeY = getAxes(mapAngle + 0.5)
-}
-
-function drawCell(x, y, z)
-{
-	// let pos = AddVector2(AddVector2(MultiplyVector2(axeX, x), MultiplyVector2(axeY, y)), MultiplyVector2(axeZ, z))
-	// canvas.fillRect (pos[0] * screenScale * mapScale + centerX, pos[1] * screenScale * mapScale + centerY, 10, 10)
-	
-	//canvas.fillStyle = this.color
-	//canvas.strokeStyle = this.color
-	canvas.beginPath()
-	let a = getPos(x - 0.5, y - 0.5, z),
-		b = getPos(x - 0.5, y + 0.5, z),
-		c = getPos(x + 0.5, y + 0.5, z),
-		d = getPos(x + 0.5, y - 0.5, z)
-	//let last = this.screenPoints[this.screenPoints.length - 1]
-	canvas.moveTo(d[0] * screenScale * mapScale + centerX, d[1] * screenScale * mapScale + centerY)
-	canvas.lineTo(a[0] * screenScale * mapScale + centerX, a[1] * screenScale * mapScale + centerY)
-	canvas.lineTo(b[0] * screenScale * mapScale + centerX, b[1] * screenScale * mapScale + centerY)
-	canvas.lineTo(c[0] * screenScale * mapScale + centerX, c[1] * screenScale * mapScale + centerY)
-	canvas.lineTo(d[0] * screenScale * mapScale + centerX, d[1] * screenScale * mapScale + centerY)
-	canvas.closePath()
-	canvas.fill()
-	// canvas.stroke()
-}
-
-function getPos(x, y, z) {
-	return AddVector2(AddVector2(MultiplyVector2(axeX, x), MultiplyVector2(axeY, y)), MultiplyVector2(axeZ, z))
-}
-
-function getAxes(angle) {
-	const pi = 3.1415
-	return [Math.cos(angle * pi), Math.sin(angle * pi) * 0.6]
+function GetMapIndex(i, j, xFactor = 1, yFactor = 1) {
+	return i * xFactor + j * yFactor;
 }const castleSize = 3;
 const troopSendDelay = 0.2;
 var castles = []
@@ -1226,7 +1375,7 @@ function CreateUnit(x, y, factionId, pathToTarget) {
 					unit.target = unit.path.pop()
 					var delta = SubstractVector2(unit.target.pos, unit.pos)
 					var direction = NormalizeVector2(delta)
-					var distance = magnitude(delta)
+					var distance = Vector2Length(delta)
 					unit.velocity = MultiplyVector2(direction, unitSpeed)
 					unit.moveTime = distance / unitSpeed
 				} else {
@@ -1283,7 +1432,7 @@ CreateCastle(-40, 0, 0, 2)
 CreateCastle(40, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
 	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 20, j * 20 + 10)
+		CreateCastle(i * 20, j * 20)
 	}
 }
 findNeibghors(30);
@@ -1296,19 +1445,6 @@ function timestamp() {
 	return perf && perf.now ? perf.now() : new Date().getTime();
 }
 
-let
-	au = CreateVector3(-100,-100, 100),
-	bu = CreateVector3(-100, 100, 100),
-	cu = CreateVector3( 100, 100, 100),
-	du = CreateVector3( 100,-100, 100),
-	ad = CreateVector3(-100,-100, -100),
-	bd = CreateVector3(-100, 100, -100),
-	cd = CreateVector3( 100, 100, -100),
-	dd = CreateVector3( 100,-100, -100)
-
-CreateQuad3D(au, bu, cu, du) // top
-CreateQuad3D(ad, bd, cd, dd, rgbToHex(255, 3, 8)) // bottom
-// CreateQuad3D(bb, ab, db, cb)
 
 function render() {
 	// clear
@@ -1357,10 +1493,12 @@ function update(dt) {
     }
 	gameObjects.forEach(g => g.update(dt));
 	// rotate camera
-    // currentMatrix = MultiplyMatrix3(currentMatrix, CreateRotationMatrix3(CreateVector3(0, 1, 0), 20.0 * dt))
-	angle += 60 * dt
-	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 60)
-    cameraWorldMatrix = MultiplyMatrix3(pitch, CreateRotationMatrix3(CreateVector3(0, 0, 1), angle))
+    //angle += 20 * dt
+    //currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), angle)
+	angle += 0.1 * dt
+	currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), Sin(angle) * 10 + 45)
+	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 40)
+    cameraWorldMatrix = MultiplyMatrix3(pitch, currentMatrix)
 }
 
 let animationFrameFunction = requestAnimationFrame
@@ -1409,12 +1547,4 @@ function fillRect(x, y, w, h) {
 
 function fillText(text, x, y) {
 	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
-}
-
-function rgbToHex(r, g, b, a = 255) {
-    function componentToHex(c) {
-        var hex = c.toString(16)
-        return hex.length == 1 ? "0" + hex : hex;
-    }
-    return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
 }

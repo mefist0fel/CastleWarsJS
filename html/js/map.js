@@ -112,7 +112,6 @@ for(i = 0; i < mapSize; i++)
 	}
 }
 map.rebuild()
-console.lot(map)
 
 function GetColor(level) {
 	// level should be 0-1
