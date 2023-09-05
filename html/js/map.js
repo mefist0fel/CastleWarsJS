@@ -58,11 +58,6 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1) {
 				for(j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
-					console.log(this.points)
-					console.log(this.points[0])
-					console.log(this.points[1])
-					console.log(this.points[pointsLen])
-					console.log(this.points[pointsLen + 1])
 					this.tiles[index].setPoints(
 						this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 0, pointsLen)],
 						this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 0, pointsLen)],
@@ -209,7 +204,7 @@ for(i = 0; i < 60; i++)
 }
 
 const
-	_ = -1
+	_ = -0.0001
 // castle
 var small = [
 	_, _, _, _, _,
