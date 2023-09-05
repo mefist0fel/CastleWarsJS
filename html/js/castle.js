@@ -150,6 +150,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		},
 		rebuild() {
 			ApplyCastleHeight(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, heightMap[this.level], 5, 6);
+			ApplyCastleColor(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, 5, getFactionColorVector3(this.faction))
 			castleTiles.rebuild()
 		}
 	}
@@ -169,6 +170,17 @@ function getFactionColor(factionId) {
 		case -1:
 		default:	
 			return '#555555'; // neutral
+	}
+}
+
+function getFactionColorVector3(factionId) {
+	switch (factionId) {
+		case 0: return CreateVector3(0, 0, 1); // player
+		case 1: return CreateVector3(1, 0, 0); // enemy
+		case 2: return CreateVector3(0, 1, 0); // enemy 2
+		case -1:
+		default:	
+			return CreateVector3(0.4, 0.4, 0.4); // neutral
 	}
 }
 

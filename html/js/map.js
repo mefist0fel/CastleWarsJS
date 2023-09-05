@@ -162,6 +162,14 @@ function ApplyCastleHeight(tileMap, x , y, castleHeight, size, heightScale = 1) 
 	}
 }
 
+function ApplyCastleColor(tileMap, x , y, size, color) {
+	for(var i = 0; i < size; i++) {
+		for(var j = 0; j < size; j++) {
+			tileMap.setColor(x + i, y + j, color)
+		}
+	}
+}
+
 const mapOffsets = [
     CreateVector3(-1,-1),
     CreateVector3(-1, 1),
