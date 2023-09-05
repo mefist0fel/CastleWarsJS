@@ -31,7 +31,7 @@ CreateCastle(-40, 0, 0, 2)
 CreateCastle(40, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
 	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 20, j * 20)
+		CreateCastle(i * 20, j * 20 + 10)
 	}
 }
 findNeibghors(30);
@@ -92,11 +92,11 @@ function update(dt) {
     }
 	gameObjects.forEach(g => g.update(dt));
 	// rotate camera
-    //angle += 20 * dt
-    //currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), angle)
-	angle += 0.1 * dt
-	currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), Sin(angle) * 10 + 45)
-	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 40)
+    angle += 20 * dt
+    currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), angle)
+	//angle += 0.1 * dt
+	//currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), Sin(angle) * 10 + 45)
+	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 45)
     cameraWorldMatrix = MultiplyMatrix3(pitch, currentMatrix)
 }
 

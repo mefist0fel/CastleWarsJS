@@ -1,17 +1,28 @@
 let
-	heightMap = [],
-	tiles = [],
-
 	mapSize = 35,
 	halfMapSize = 17,
 	mapScale = 60,
-	halfMapScale = 30
+	halfMapScale = 30,
+	CreateArray = Array
 
-function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
+const tileOffsets = [
+	CreateVector3(-1, 1),
+	CreateVector3(-1,-1),
+	CreateVector3( 1, 1),
+	CreateVector3( 1,-1)
+]
+
+//CreateQuad3D(tileOffsets[0], tileOffsets[1], tileOffsets[2], tileOffsets[3])
+
+function CreateCellMap(mapSize, scale, defaultHeight = -1) {
+	let pointsLen = mapSize * 4;
 	let map = {
-		heightMap: [],
-		colors: [],
-		tiles: [],
+		heightMap: CreateArray(mapSize * mapSize),
+		points: CreateArray(mapSize * mapSize * 4),
+		colors: CreateArray(mapSize * mapSize),
+		tiles: CreateArray(mapSize * mapSize),
+		tilesTop: CreateArray(mapSize * mapSize),
+		tilesLeft: CreateArray(mapSize * mapSize),
 		size: mapSize,
 		setHeight(x, y, height) {
 			SetElementSafe(this.heightMap, x, y, this.size, height)
@@ -26,13 +37,75 @@ function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
 			return GetElementSafe(this.colors, x, y, this.size, CreateVector3())
 		},
 		rebuild() {
+			//let points = CreateArray(4)
 			for(i = 0; i < this.size; i++)
 			{
 				for(j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
-					this.tiles[index].setHeight(this.heightMap[index])
+					let position = CreateVector3((i -  mapHalfSize) *  scale, (j - mapHalfSize) * scale, this.heightMap[index])
+
+					for(let pointIdx = 0; pointIdx < 4; pointIdx ++) {
+						let ptIndex = GetMapIndex(i * 2 + Math.floor(pointIdx / 2) ,  j * 2 + pointIdx % 2, pointsLen)
+						this.points[ptIndex] = AddVector3(position, MultiplyVector3(tileOffsets[pointIdx], mapHalfScale))
+					}
+					//this.tiles[index].setPoints(points[0], points[1], points[2], points[3])
+					//this.tiles[index].setColor(this.colors[index])
+				}
+			}
+			for(i = 0; i < this.size; i++)
+			{
+				for(j = 0; j < this.size; j++)
+				{
+					let index = GetMapIndex(i, j, this.size)
+					console.log(this.points)
+					console.log(this.points[0])
+					console.log(this.points[1])
+					console.log(this.points[pointsLen])
+					console.log(this.points[pointsLen + 1])
+					this.tiles[index].setPoints(
+						this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 0, pointsLen)],
+						this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 0, pointsLen)],
+						this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 1, pointsLen)],
+						this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 1, pointsLen)])
 					this.tiles[index].setColor(this.colors[index])
+					this.tiles[index].enable = this.heightMap[index] >= 0
+
+					if (i < this.size - 1) {
+						this.tilesTop[index].setPoints(
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 2 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 2 ,  j * 2 + 1, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 1, pointsLen)])
+						let topIndex = GetMapIndex(i + 1, j, this.size)
+						let color
+						if (this.heightMap[index] > this.heightMap[topIndex]) {
+							color = MultiplyVector3(this.colors[index], 0.8)
+							this.tilesTop[index].enable = this.heightMap[index] >= 0
+						} else {
+							color = MultiplyVector3(this.colors[topIndex], 0.8)
+							this.tilesTop[index].enable = this.heightMap[topIndex] >= 0
+						}
+						this.tilesTop[index].setColor(color)
+					}
+
+					if (j < this.size - 1) {
+						this.tilesLeft[index].setPoints(
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 3, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 3, pointsLen)])
+						let leftIndex = GetMapIndex(i, j + 1, this.size)
+						let color
+						if (this.heightMap[index] > this.heightMap[leftIndex]) {
+							color = MultiplyVector3(this.colors[index], 0.8)
+							this.tilesLeft[index].enable = this.heightMap[index] >= 0
+						} else {
+							color = MultiplyVector3(this.colors[leftIndex], 0.8)
+							this.tilesLeft[index].enable = this.heightMap[leftIndex] >= 0
+						}
+						this.tilesLeft[index].setColor(color)
+					}
 				}
 			}
 		}
@@ -46,34 +119,16 @@ function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
 	{
 		for(j = 0; j < map.size; j++)
 		{
-			map.heightMap.push(defaultHeight)
-	
-			let position = CreateVector3((i -  mapHalfSize) *  scale, (j - mapHalfSize) * scale)
-			let color = CreateVector3()
-			map.tiles.push(CreateTile3D(position, defaultHeight, mapHalfScale, color, offset))
-			map.colors.push(color);
+			let index = GetMapIndex(i, j, map.size)
+			map.heightMap[index] = defaultHeight
+			let color = CreateVector3(1, 1, 1)
+			map.tiles[index] = CreateQuad3D(color, color, color, color, color)
+			map.tilesTop[index] = CreateQuad3D(color, color, color, color, color)
+			map.tilesLeft[index] = CreateQuad3D(color, color, color, color, color)
+			map.colors[index] = color;
 		}
 	}
-
-	for(i = 1; i < map.size - 1; i++)
-	{
-		for(j = 1; j < map.size - 1; j++)
-		{
-			let height = map.heightMap[GetMapIndex(i, j, map.size)]
-			map.tiles[GetMapIndex(i, j, map.size)].neigbhors = [
-				map.heightMap[GetMapIndex(i - 1, j    , map.size)],
-				map.heightMap[GetMapIndex(i    , j + 1, map.size)],
-				map.heightMap[GetMapIndex(i + 1, j    , map.size)],
-				map.heightMap[GetMapIndex(i    , j - 1, map.size)]
-			]
-			map.tiles[GetMapIndex(i, j, mapSize)].sideColors = [
-				GetColor(height * 0.9),
-				GetColor(height * 1.1),
-				GetColor(height * 0.9),
-				GetColor(height * 0.7)
-			]
-		}
-	}
+	map.rebuild()
 	return map
 	
 	function SetElementSafe(list, x, y, size, value) {
@@ -96,7 +151,7 @@ function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
 	}
 }
 
-function GetColor(level) {
+function GetHeightColor(level) {
 	// level should be 0-1
 	let r = Clamp01(0.3 + level * 0.1)
 	let g = Clamp01(0.5 + level * 0.5)
@@ -111,6 +166,13 @@ function applyCastleHeight(tileMap, x , y, castleHeight, size, heightScale = 1) 
 		}
 	}
 }
+
+const mapOffsets = [
+    CreateVector3(-1,-1),
+    CreateVector3(-1, 1),
+    CreateVector3( 1, 1),
+    CreateVector3( 1,-1)
+]
 
 var map = CreateCellMap(mapSize, 50, 50)
 for(i = 0; i < mapSize; i++)
@@ -128,7 +190,7 @@ for(i = 0; i < mapSize; i++)
 			height = -1
 
 		map.setHeight(i, j, height)
-		map.setColor(i, j, GetColor(height / 80))
+		map.setColor(i, j, GetHeightColor(height / 80))
 	}
 }
 map.rebuild()
@@ -147,8 +209,7 @@ for(i = 0; i < 60; i++)
 }
 
 const
-	_ = -1,
-	L = 0
+	_ = -1
 // castle
 var small = [
 	_, _, _, _, _,
