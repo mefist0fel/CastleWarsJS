@@ -23,18 +23,17 @@ UpdateCanvasSize()
 
 // init
 let rect = canvasElement.getBoundingClientRect();
-var selectedCastle = null;
 
 var gameObjects = [];
 var drawObjects = [];
-CreateCastle(-40, 0, 0, 2)
-CreateCastle(40, 0, 1, 2)
+CreateCastle(-6, 0, 0, 2)
+CreateCastle(6, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
 	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 20, j * 20)
+		CreateCastle(i * 3, j * 3)
 	}
 }
-findNeibghors(30);
+findNeibghors(6)
 
 var input = Input(rect)
 gameObjects.push(input)
@@ -57,10 +56,6 @@ function render() {
 
 	canvas.fillStyle    = '#333333';  // black
 	canvas.strokeStyle    = '#101010';  // black
-	// Selected castle
-	if (selectedCastle != null) {
-		selectedCastle.drawSelection(canvas)
-	}
 
 	// castles
 	drawObjects.forEach(g => g.draw(canvas))

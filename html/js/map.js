@@ -38,9 +38,9 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1) {
 		},
 		rebuild() {
 			//let points = CreateArray(4)
-			for(i = 0; i < this.size; i++)
+			for(var i = 0; i < this.size; i++)
 			{
-				for(j = 0; j < this.size; j++)
+				for(var j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
 					let position = CreateVector3((i -  mapHalfSize) *  scale, (j - mapHalfSize) * scale, this.heightMap[index])
@@ -53,9 +53,9 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1) {
 					//this.tiles[index].setColor(this.colors[index])
 				}
 			}
-			for(i = 0; i < this.size; i++)
+			for(var i = 0; i < this.size; i++)
 			{
-				for(j = 0; j < this.size; j++)
+				for(var j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
 					this.tiles[index].setPoints(
@@ -154,9 +154,9 @@ function GetHeightColor(level) {
 	return CreateVector3(r, g, b)
 }
 
-function applyCastleHeight(tileMap, x , y, castleHeight, size, heightScale = 1) {
-	for(i = 0; i < size; i++) {
-		for(j = 0; j < size; j++) {
+function ApplyCastleHeight(tileMap, x , y, castleHeight, size, heightScale = 1) {
+	for(var i = 0; i < size; i++) {
+		for(var j = 0; j < size; j++) {
 			tileMap.setHeight(x + i, y + j, castleHeight[i * size + j] * heightScale)
 		}
 	}
@@ -190,15 +190,15 @@ for(i = 0; i < mapSize; i++)
 }
 map.rebuild()
 
-var castles = CreateCellMap(65, 10)
-for(i = 0; i < 60; i++)
+var castleTiles = CreateCellMap(85, 10)
+for(i = 0; i < 80; i++)
 {
-	for(j = 0; j < 60; j++)
+	for(j = 0; j < 80; j++)
 	{
-		if (i < 30) {
-			castles.setColor(i, j, CreateVector3(0.8, 0.2, 0.2))
+		if (i < 40) {
+			castleTiles.setColor(i, j, CreateVector3(0.8, 0.2, 0.2))
 		} else {
-			castles.setColor(i, j, CreateVector3(0.2, 0.2, 0.8))
+			castleTiles.setColor(i, j, CreateVector3(0.2, 0.2, 0.8))
 		}
 	}
 }
@@ -230,9 +230,9 @@ var big = [
 	4, 2, 3, 2, 4
 ]
 
-applyCastleHeight(castles, 15, 15, big, 5, 6);
-applyCastleHeight(castles, 35, 15, small, 5, 6);
-applyCastleHeight(castles, 45, 5, small, 5, 6);
-applyCastleHeight(castles, 15, 35, small, 5, 6);
-applyCastleHeight(castles, 35, 35, medium, 5, 6);
-castles.rebuild()
+// ApplyCastleHeight(castleTiles, 15, 15, big, 5, 6);
+// ApplyCastleHeight(castleTiles, 35, 15, small, 5, 6);
+// ApplyCastleHeight(castleTiles, 45, 5, small, 5, 6);
+// ApplyCastleHeight(castleTiles, 15, 35, small, 5, 6);
+// ApplyCastleHeight(castleTiles, 35, 35, medium, 5, 6);
+castleTiles.rebuild()

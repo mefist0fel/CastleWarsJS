@@ -7,12 +7,13 @@ var objects3d = [],
     cameraPosition = CreateVector3(),
     centerOffcet = null,
     cameraScale = 1,
-    projectionFactor = 0.0004
+    cameraScreenScale = 1,
+    projectionFactor = 0.0001
 
 
 function SetCameraSize(width, height) {
     centerOffcet = CreateVector3(width * 0.5, height * 0.5)
-    cameraScale = Math.min(width, height) / 1024
+    cameraScreenScale = Math.min(width, height) / 1024
 }
 
 function SetCameraAngle(angle) {
@@ -23,7 +24,7 @@ function SetCameraAngle(angle) {
         radY = (angle / 180.0  + 0.5) * PI
     axeX = CreateVector3(Cos(radX), Sin(radX) * isoFactor, Sin(radX)),
     axeY = CreateVector3(Cos(radY), Sin(radY) * isoFactor, Sin(radY)),
-    axeZ = CreateVector3(0, -0.8, 1)
+    axeZ = CreateVector3(0, -0.4, 2)
 }
 
 function DrawCamera () {
@@ -49,7 +50,7 @@ function WorldToScreenVector3 (point) {
     // worldPoint = MultiplyVector3ToMatrix3(worldPoint, cameraWorldMatrix)
     worldPoint = AddVector3(AddVector3(MultiplyVector3(axeX, worldPoint[0]),MultiplyVector3(axeY, worldPoint[1])), MultiplyVector3(axeZ, worldPoint[2]))
     worldPoint = AddVector3(worldPoint, cameraOffset)
-    worldPoint = MultiplyVector3(worldPoint, cameraScale * (1 + worldPoint[2] * projectionFactor))
+    worldPoint = MultiplyVector3(worldPoint, cameraScale * cameraScreenScale * (1 + worldPoint[2] * projectionFactor))
     return AddVector3(worldPoint, centerOffcet)
 }
 
