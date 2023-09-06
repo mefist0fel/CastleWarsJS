@@ -1,5 +1,5 @@
 const castleSize = 3;
-const troopSendDelay = 0.2;
+const troopSendDelay = 0.3;
 var castles = []
 var selectedCastle = null;
 
@@ -61,25 +61,25 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			if (this == selectedCastle) {
 				canvas.fillStyle = '#FFFFFF';// white
 				let size = sizes[this.level] + 1;
-				fillRect (castle.pos2d[0] - size, castle.pos2d[1] - size, size + size, size + size)
+				fillRectScreen (castle.pos2d[0] - size, castle.pos2d[1] - size, size + size, size + size)
 				// Move
 				canvas.fillStyle = '#FF00FF';
 				castles.forEach(c => {
 					if (c.pathCastle != null) {
 						let size = sizes[c.level] + 1;
-						fillRect(c.pos2d[0] - size, c.pos2d[1] - size, size + size, size + size)
+						fillRectScreen(c.pos2d[0] - size, c.pos2d[1] - size, size + size, size + size)
 					}
 				});
 			}
 			// Draw
 			canvas.fillStyle = getFactionColor(castle.faction);
 			let size = sizes[this.level];
-			fillRect(castle.pos2d[0] - size, castle.pos2d[1] - size, size + size, size + size)
+			fillRectScreen(castle.pos2d[0] - size, castle.pos2d[1] - size, size + size, size + size)
 			canvas.textAlign = 'center';
 			fillText(castle.lives, castle.pos2d[0], castle.pos2d[1] - size - 1);
 			// upgrade marker
 			if (castle.lives >= upgradeCost[castle.level]) {
-				fillRect (castle.pos2d[0] + size + size, castle.pos2d[1] - size - size - 1, 1, 1)
+				fillRectScreen (castle.pos2d[0] + size + size, castle.pos2d[1] - size - size - 1, 1, 1)
 			}
 		},
 		upgrade() {
@@ -91,29 +91,33 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			}
 		},
 		update(dt) {
-			this.reloadTime -= dt;
+			this.reloadTime -= dt
 			if (this.reloadTime <= 0) {
-				this.reloadTime = reloadTime;
+				this.reloadTime = reloadTime
 				if (this.faction >= 0 && castle.lives < castle.max) {
-					this.lives += spawn[this.level];
+					this.lives += spawn[this.level]
 				}
 			}
 			if (this.sendTroopTime > 0) {
-				this.sendTroopTime -= dt;
+				this.sendTroopTime -= dt
 			} else {
 				if (this.lives > 0 && this.attackCount > 0) {
-					this.lives -= 1;
-					this.attackCount -= 1;
-					CreateUnit(this.coord[0], this.coord[1], this.faction, this.pathToTarget);
-					this.sendTroopTime += troopSendDelay;
+					let unitsToSend = 3
+					while (unitsToSend > 0 && this.attackCount > 0 && this.lives > 0) {
+						this.lives -= 1
+						this.attackCount -= 1
+						CreateUnit(this.coord[0], this.coord[1], this.faction, this.pathToTarget, (unitsToSend - 2))
+						unitsToSend -= 1
+					}
+					this.sendTroopTime += troopSendDelay
 				} else {
-					this.target = null;
+					this.target = null
 				} 
 			}
 		},
 		
 		contains(x, y) {
-			let pos2d = castle.pos2d;
+			let pos2d = castle.pos2d
 			return (
 				pos2d[0] - castleSize < x && 
 				pos2d[1] - castleSize < y && 
@@ -122,15 +126,15 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		},
 		attack(factionId) {
 			if (this.faction == factionId) {
-				this.lives += 1;
+				this.lives += 1
 			} else {
 				if (this.lives <= 0) {
-					this.faction = factionId;
+					this.faction = factionId
 					// update color
 					this.rebuild()
-					this.lives = 1;
+					this.lives = 1
 				} else {
-					this.lives -= 1;
+					this.lives -= 1
 				}
 			}
 		},
@@ -175,12 +179,12 @@ function getFactionColor(factionId) {
 
 function getFactionColorVector3(factionId) {
 	switch (factionId) {
-		case 0: return CreateVector3(0, 0, 1); // player
-		case 1: return CreateVector3(1, 0, 0); // enemy
-		case 2: return CreateVector3(0, 1, 0); // enemy 2
+		case 0: return CreateVector3(0.2, 0.2, 1.0); // player
+		case 1: return CreateVector3(1.0, 0.2, 0.2); // enemy
+		case 2: return CreateVector3(0.2, 1.0, 0.2); // enemy 2
 		case -1:
 		default:	
-			return CreateVector3(0.4, 0.4, 0.4); // neutral
+			return CreateVector3(0.6, 0.6, 0.6); // neutral
 	}
 }
 

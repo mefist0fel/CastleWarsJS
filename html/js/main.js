@@ -133,7 +133,7 @@ function UpdateCanvasSize() {
 	SetCameraSize(width, height)
 }
 
-function fillRect(x, y, w, h) {
+function fillRectScreen(x, y, w, h) {
 	canvas.fillRect (x * screenScale + centerX, y * screenScale + centerY, w * screenScale, h * screenScale)
 }
 

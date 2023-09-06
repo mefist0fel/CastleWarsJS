@@ -93,10 +93,10 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1) {
 						let leftIndex = GetMapIndex(i, j + 1, this.size)
 						let color
 						if (this.heightMap[index] > this.heightMap[leftIndex]) {
-							color = MultiplyVector3(this.colors[index], 0.8)
+							color = MultiplyVector3(this.colors[index], 0.7)
 							this.tilesLeft[index].enable = this.heightMap[index] >= 0
 						} else {
-							color = MultiplyVector3(this.colors[leftIndex], 0.8)
+							color = MultiplyVector3(this.colors[leftIndex], 0.7)
 							this.tilesLeft[index].enable = this.heightMap[leftIndex] >= 0
 						}
 						this.tilesLeft[index].setColor(color)
@@ -212,7 +212,7 @@ for(i = 0; i < 80; i++)
 }
 
 const
-	_ = -0.0001
+	_ = -0.000001
 // castle
 var small = [
 	_, _, _, _, _,

@@ -6,7 +6,7 @@ var objects3d = [],
     cameraOffset = CreateVector3(0, 0,-20),
     cameraPosition = CreateVector3(),
     centerOffcet = null,
-    cameraScale = 1,
+    cameraScale = 1.6,
     cameraScreenScale = 1,
     projectionFactor = 0.0001
 
@@ -24,7 +24,7 @@ function SetCameraAngle(angle) {
         radY = (angle / 180.0  + 0.5) * PI
     axeX = CreateVector3(Cos(radX), Sin(radX) * isoFactor, Sin(radX)),
     axeY = CreateVector3(Cos(radY), Sin(radY) * isoFactor, Sin(radY)),
-    axeZ = CreateVector3(0, -0.4, 2)
+    axeZ = CreateVector3(0, -0.6, 2)
 }
 
 function DrawCamera () {
