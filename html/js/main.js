@@ -69,8 +69,9 @@ function render() {
 
 function update(dt) {
 	if (input.mouseLeftDown) {
-		setSelected(getCastle(input.mousePosition));
+		selectedCastle = getCastle(input.mousePosition)
 		findAvailableForMoveCastles(selectedCastle)
+		updateSelection()
 	}
 	if (input.mouseRightDown) {
 		let target = getCastle(input.mousePosition);

@@ -10,6 +10,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		spawn = [1, 2, 3],
 		upgradeCost = [15, 20, 999],
 		whiteColor = CreateVector3(1, 1, 1),
+		grayColor = CreateVector3(0.5, 0.5, 0.5),
 		heightMap = [
 			// small castle
 			[
@@ -149,12 +150,17 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			castleTiles.rebuild()
 		},
 		setSelected(isSelected) {
-			let height = -0.00001
-			if (isSelected) {
-				height = 0;
+			let 
+				height = -0.00001,
+				color = whiteColor
+			if (this.pathCastle != null) {
+				color = grayColor
+				height = 0
 			}
-			SetSelectionBorder(castleTiles, 39 + this.coord[0] * 5, 39 + this.coord[1] * 5, 7, whiteColor, height)
-			castleTiles.rebuild()
+			if (isSelected) {
+				height = 0
+			}
+			SetSelectionBorder(castleTiles, 39 + this.coord[0] * 5, 39 + this.coord[1] * 5, 7, color, height)
 		}
 	}
 	gameObjects.push(castle)
@@ -165,9 +171,9 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 	return castle;
 }
 
-function setSelected(castle) {
-	selectedCastle = castle
+function updateSelection() {
 	castles.forEach(c => c.setSelected(c == selectedCastle));
+	castleTiles.rebuild()
 }
 function getFactionColorVector3(factionId) {
 	switch (factionId) {
