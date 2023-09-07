@@ -25,11 +25,27 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
             this.depth = -this.screenPosition[2] - 500
         },
 		draw() {
-			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(unit.faction), 0.95));
-			// Draw
+			// Draw unit
 			var height = Math.abs(SubstractVector3(this.screenPosition, this.screenPositionTop)[2]);
-			var width = height * 0.22;
-			canvas.fillRect  (this.screenPosition[0] - width, this.screenPosition[1] - height, width + width, height)
+			var smallHeight = height * 0.2;
+			var width = height * 0.34;
+			let shieldLeft = [
+				AddVector3(this.screenPosition, CreateVector3(0, smallHeight)),
+				AddVector3(this.screenPosition, CreateVector3(width, 0)),
+				AddVector3(this.screenPosition, CreateVector3(width, -height)),
+				AddVector3(this.screenPosition, CreateVector3(0, -height)),
+			]
+			let shieldRight = [
+				AddVector3(this.screenPosition, CreateVector3(0, smallHeight)),
+				AddVector3(this.screenPosition, CreateVector3(0, -height)),
+				AddVector3(this.screenPosition, CreateVector3(-width, -height)),
+				AddVector3(this.screenPosition, CreateVector3(-width, 0)),
+			]
+			// canvas.fillRect  (this.screenPosition[0] - width, this.screenPosition[1] - height, width + width, height)
+			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(unit.faction), 0.95));
+			DrawQuad(shieldLeft)
+			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(unit.faction), 0.85));
+			DrawQuad(shieldRight)
 		},
 		update(dt) {
 			// move to point

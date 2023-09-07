@@ -70,7 +70,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			fillText(castle.lives, castle.screenTopPosition[0], castle.screenTopPosition[1])
 			// upgrade marker
 			if (castle.lives >= upgradeCost[castle.level]) {
-				fillText ("^", castle.screenTopPosition[0] + this.screenSize[0], castle.screenTopPosition[1])
+				fillText ("^", castle.screenTopPosition[0] + this.screenSize[0] * 0.5, castle.screenTopPosition[1])
 			}
 		},
 		upgrade() {
