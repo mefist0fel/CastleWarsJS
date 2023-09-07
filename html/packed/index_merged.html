@@ -879,17 +879,31 @@ function playString(str) {
 //playSound([0,,0.1812,,0.1349,0.4524,,0.2365,,,,,,0.0819,,,,,1,,,,,0.5]); return false;
 // Camera props and function
 var objects3d = [],
-    cameraWorldMatrix = CreateUnitMatrix3(),
-    cameraProjectionMatrix = CreateProjectionMatrix4(1.0, 1.0, 1.0, 4.0),
-    cameraOffset = CreateVector3(0, 0,-1000),
+    axeX = CreateVector3(1, 0, 0),
+    axeY = CreateVector3(0, 1, 0),
+    axeZ = CreateVector3(0, 0, 1),
+    cameraOffset = CreateVector3(0, 0,-20),
     cameraPosition = CreateVector3(),
     centerOffcet = null,
-    cameraScale = null
+    cameraScale = 1.6,
+    cameraScreenScale = 1,
+    projectionFactor = 0.0001
 
 
 function SetCameraSize(width, height) {
     centerOffcet = CreateVector3(width * 0.5, height * 0.5)
-    cameraScale = Math.min(width, height)
+    cameraScreenScale = Math.min(width, height) / 1024
+}
+
+function SetCameraAngle(angle) {
+    // Set iso axes
+    let
+        isoFactor = 0.6,
+        radX = angle / 180.0 * PI
+        radY = (angle / 180.0  + 0.5) * PI
+    axeX = CreateVector3(Cos(radX), Sin(radX) * isoFactor, Sin(radX)),
+    axeY = CreateVector3(Cos(radY), Sin(radY) * isoFactor, Sin(radY)),
+    axeZ = CreateVector3(0, -0.6, 2)
 }
 
 function DrawCamera () {
@@ -910,31 +924,22 @@ function Object3DDepthComparator (objectA, objectB) {
 	return 0
 }
 
-function WorldToNormVector3 (point) {
-    let worldPoint = point
-    worldPoint = AddVector3(worldPoint, MultiplyVector3(cameraPosition, -1.0))
-    worldPoint = MultiplyVector3ToMatrix3(worldPoint, cameraWorldMatrix)
-    worldPoint = AddVector3(worldPoint, cameraOffset)
-    worldPoint = MultiplyVector3ToMatrix4(worldPoint, cameraProjectionMatrix)
-    return worldPoint
-}
-
 function WorldToScreenVector3 (point) {
-    let worldPoint = point
-    worldPoint = AddVector3(worldPoint, MultiplyVector3(cameraPosition, -1.0))
-    worldPoint = MultiplyVector3ToMatrix3(worldPoint, cameraWorldMatrix)
+    worldPoint = AddVector3(point, MultiplyVector3(cameraPosition, -1.0))
+    // worldPoint = MultiplyVector3ToMatrix3(worldPoint, cameraWorldMatrix)
+    worldPoint = AddVector3(AddVector3(MultiplyVector3(axeX, worldPoint[0]),MultiplyVector3(axeY, worldPoint[1])), MultiplyVector3(axeZ, worldPoint[2]))
     worldPoint = AddVector3(worldPoint, cameraOffset)
-    worldPoint = MultiplyVector3ToMatrix4(worldPoint, cameraProjectionMatrix)
-    worldPoint = MultiplyVector3(worldPoint, cameraScale)
+    worldPoint = MultiplyVector3(worldPoint, cameraScale * cameraScreenScale * (1 + worldPoint[2] * projectionFactor))
     return AddVector3(worldPoint, centerOffcet)
 }
 
 // 3d Quad class
-function CreateQuad3D (a, b, c, d, color = '#FFEEEE') {
+function CreateQuad3D (a, b, c, d, color = CreateVector3(1, 1, 1), offset=0) {
     var quad = {
 		screenPoints: [a, b, c, d],
 		depth: 0,
 		color: color,
+		enable: true,
         setPoints(a, b, c, d, position = null) {
             quad.points = [a, b, c, d]
             if (position == null)
@@ -942,19 +947,21 @@ function CreateQuad3D (a, b, c, d, color = '#FFEEEE') {
             else
                 quad.position = position
 		},
+        setColor(newColor) {
+            quad.color = newColor
+		},
         prepareScene () {
-            quad.depth = WorldToScreenVector3(quad.position)[2]
+            if (!quad.enable)
+                return
+            quad.depth = -WorldToScreenVector3(quad.position)[2] + offset
             for(let i = 0; i < quad.screenPoints.length; i++) {
                 quad.screenPoints[i] = WorldToScreenVector3(quad.points[i])
             }
         },
         draw () {
-            // ignore backface
-            let dot = PointToLine(quad.screenPoints[0], quad.screenPoints[1], quad.screenPoints[2])
-            if (dot > 0)
+            if (!quad.enable)
                 return
-            canvas.fillStyle = quad.color
-            canvas.strokeStyle = quad.color
+            canvas.fillStyle = Vector3ToColor(quad.color)
             DrawQuad(quad.screenPoints)
         }
     }
@@ -963,91 +970,12 @@ function CreateQuad3D (a, b, c, d, color = '#FFEEEE') {
     return quad
 }
 
-const tileOffsets = [
-    CreateVector3(-1,-1),
-    CreateVector3(-1, 1),
-    CreateVector3( 1, 1),
-    CreateVector3( 1,-1)
-]
-
-// 3d map cell class
-function CreateTile3D (pos, height, scale, color, depth = 0) {
-    var tile = {
-		basePosition: pos,
-		position: AddVector3(pos, CreateVector3(0, 0, height)),
-		height: height,
-        scale: scale,
-		points: CreateQuadArray(),
-		basePoints: CreateQuadArray(),
-		screenPoints: CreateQuadArray(),
-		color: color,
-        sideColors:[color, color, color, color],
-        neigbhors:[0, 0, 0, 0],
-        walls:[CreateQuadArray(), CreateQuadArray(), CreateQuadArray(), CreateQuadArray()],
-		depth: 0,
-        setHeight(height) {
-            this.height = height
-        },
-        setColor(color) {
-            this.color = getColor(color)
-            this.sideColors = [
-                getColor(MultiplyVector3(color, 0.9)),
-                getColor(MultiplyVector3(color, 0.7)),
-                getColor(MultiplyVector3(color, 0.5)),
-                getColor(MultiplyVector3(color, 0.7))
-            ]
-        },
-        prepareScene () {
-            for(let i = 0; i < 4; i++) {
-                this.points[i] = AddVector3(AddVector3(this.basePosition, MultiplyVector3(tileOffsets[i], this.scale)), CreateVector3(0, 0, this.height))
-            }
-            let normPosition = WorldToNormVector3(this.position)
-            this.depth = normPosition[2] + depth
-            for(let i = 0; i < 4; i++) {
-                this.screenPoints[i] = WorldToScreenVector3(this.points[i])
-            }
-            for(let j = 0; j < 4; j++) {
-                let height = this.neigbhors[j]
-                if (this.height < height)
-                    height = this.height
-                for(let i = 0; i < 4; i++) {
-                    this.basePoints[i] = AddVector3(AddVector3(this.basePosition, MultiplyVector3(tileOffsets[i], this.scale)), CreateVector3(0, 0, height))
-                }
-                this.walls[j][0] = WorldToScreenVector3(this.points[(j + 1) % 4])
-                this.walls[j][1] = WorldToScreenVector3(this.points[(j + 0) % 4])
-                this.walls[j][2] = WorldToScreenVector3(this.basePoints[(j + 0) % 4])
-                this.walls[j][3] = WorldToScreenVector3(this.basePoints[(j + 1) % 4])
-            }
-        },
-        draw () {
-            // ignore 0 height tiles
-            if (this.height <= -1)
-                return
-            canvas.fillStyle = this.color
-            DrawQuad(this.screenPoints)
-            for(let i = 0; i < this.walls.length; i++) {
-                canvas.fillStyle = this.sideColors[i]
-                DrawQuad(this.walls[i])
-            }
-        }
-    }
-    objects3d.push(tile)
-    return tile
-
-    function getColor(vector3) {
-        // level should be 0-100
-        let r = Round(Clamp01(vector3[0]) * 255)
-        let g = Round(Clamp01(vector3[1]) * 255)
-        let b = Round(Clamp01(vector3[2]) * 255)
-        return rgbToHex(r, g, b)
-    }
-}
-
 function DrawQuad(points) {
     // ignore backface
     let dot = PointToLine(points[0], points[1], points[2])
     if (dot > 0)
         return
+
     canvas.beginPath()
     let last = points[3]
     canvas.moveTo(last[0], last[1])
@@ -1058,31 +986,45 @@ function DrawQuad(points) {
     canvas.fill()
 }
 
-function CreateQuadArray() {
-    let a = CreateVector3()
-    return [a, a, a, a]
+function Vector3ToColor(vector3) {
+    // level should be 0-100
+    let r = Round(Clamp01(vector3[0]) * 255)
+    let g = Round(Clamp01(vector3[1]) * 255)
+    let b = Round(Clamp01(vector3[2]) * 255)
+    return RGBToHex(r, g, b)
 }
 
-function rgbToHex(r, g, b, a = 255) {
+function RGBToHex(r, g, b, a = 255) {
     function componentToHex(c) {
         var hex = c.toString(16)
         return hex.length == 1 ? "0" + hex : hex;
     }
     return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b) + componentToHex(a);
 }let
-	heightMap = [],
-	tiles = [],
-
 	mapSize = 35,
 	halfMapSize = 17,
 	mapScale = 60,
-	halfMapScale = 30
+	halfMapScale = 30,
+	CreateArray = Array
 
-function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
+const tileOffsets = [
+	CreateVector3(-1, 1),
+	CreateVector3(-1,-1),
+	CreateVector3( 1, 1),
+	CreateVector3( 1,-1)
+]
+
+//CreateQuad3D(tileOffsets[0], tileOffsets[1], tileOffsets[2], tileOffsets[3])
+
+function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
+	let pointsLen = mapSize * 4;
 	let map = {
-		heightMap: [],
-		colors: [],
-		tiles: [],
+		heightMap: CreateArray(mapSize * mapSize),
+		points: CreateArray(mapSize * mapSize * 4),
+		colors: CreateArray(mapSize * mapSize),
+		tiles: CreateArray(mapSize * mapSize),
+		tilesTop: CreateArray(mapSize * mapSize),
+		tilesLeft: CreateArray(mapSize * mapSize),
 		size: mapSize,
 		setHeight(x, y, height) {
 			SetElementSafe(this.heightMap, x, y, this.size, height)
@@ -1097,13 +1039,67 @@ function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
 			return GetElementSafe(this.colors, x, y, this.size, CreateVector3())
 		},
 		rebuild() {
-			for(i = 0; i < this.size; i++)
+			for(var i = 0; i < this.size; i++)
 			{
-				for(j = 0; j < this.size; j++)
+				for(var j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
-					this.tiles[index].setHeight(this.heightMap[index])
+					let position = CreateVector3((i -  mapHalfSize) *  scale, (j - mapHalfSize) * scale, this.heightMap[index])
+
+					for(let pointIdx = 0; pointIdx < 4; pointIdx ++) {
+						let ptIndex = GetMapIndex(i * 2 + Math.floor(pointIdx / 2) ,  j * 2 + pointIdx % 2, pointsLen)
+						this.points[ptIndex] = AddVector3(position, MultiplyVector3(tileOffsets[pointIdx], mapHalfScale))
+					}
+				}
+			}
+			for(var i = 0; i < this.size; i++)
+			{
+				for(var j = 0; j < this.size; j++)
+				{
+					let index = GetMapIndex(i, j, this.size)
+					this.tiles[index].setPoints(
+						this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 0, pointsLen)],
+						this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 0, pointsLen)],
+						this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 1, pointsLen)],
+						this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 1, pointsLen)])
 					this.tiles[index].setColor(this.colors[index])
+					this.tiles[index].enable = this.heightMap[index] >= 0
+
+					if (i < this.size - 1) {
+						this.tilesTop[index].setPoints(
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 2 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 2 ,  j * 2 + 1, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 1, pointsLen)])
+						let topIndex = GetMapIndex(i + 1, j, this.size)
+						let color
+						if (this.heightMap[index] > this.heightMap[topIndex]) {
+							color = MultiplyVector3(this.colors[index], 0.8)
+							this.tilesTop[index].enable = this.heightMap[index] >= 0
+						} else {
+							color = MultiplyVector3(this.colors[topIndex], 0.8)
+							this.tilesTop[index].enable = this.heightMap[topIndex] >= 0
+						}
+						this.tilesTop[index].setColor(color)
+					}
+
+					if (j < this.size - 1) {
+						this.tilesLeft[index].setPoints(
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 0, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 3, pointsLen)],
+							this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 3, pointsLen)])
+						let leftIndex = GetMapIndex(i, j + 1, this.size)
+						let color
+						if (this.heightMap[index] > this.heightMap[leftIndex]) {
+							color = MultiplyVector3(this.colors[index], 0.7)
+							this.tilesLeft[index].enable = this.heightMap[index] >= 0
+						} else {
+							color = MultiplyVector3(this.colors[leftIndex], 0.7)
+							this.tilesLeft[index].enable = this.heightMap[leftIndex] >= 0
+						}
+						this.tilesLeft[index].setColor(color)
+					}
 				}
 			}
 		}
@@ -1117,34 +1113,16 @@ function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
 	{
 		for(j = 0; j < map.size; j++)
 		{
-			map.heightMap.push(defaultHeight)
-	
-			let position = CreateVector3((i -  mapHalfSize) *  scale, (j - mapHalfSize) * scale)
-			let color = CreateVector3()
-			map.tiles.push(CreateTile3D(position, defaultHeight, mapHalfScale, color, offset))
-			map.colors.push(color);
+			let index = GetMapIndex(i, j, map.size)
+			map.heightMap[index] = defaultHeight
+			let color = CreateVector3(1, 1, 1)
+			map.tiles[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
+			map.tilesTop[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
+			map.tilesLeft[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
+			map.colors[index] = color;
 		}
 	}
-
-	for(i = 1; i < map.size - 1; i++)
-	{
-		for(j = 1; j < map.size - 1; j++)
-		{
-			let height = map.heightMap[GetMapIndex(i, j, map.size)]
-			map.tiles[GetMapIndex(i, j, map.size)].neigbhors = [
-				map.heightMap[GetMapIndex(i - 1, j    , map.size)],
-				map.heightMap[GetMapIndex(i    , j + 1, map.size)],
-				map.heightMap[GetMapIndex(i + 1, j    , map.size)],
-				map.heightMap[GetMapIndex(i    , j - 1, map.size)]
-			]
-			map.tiles[GetMapIndex(i, j, mapSize)].sideColors = [
-				GetColor(height * 0.9),
-				GetColor(height * 1.1),
-				GetColor(height * 0.9),
-				GetColor(height * 0.7)
-			]
-		}
-	}
+	map.rebuild()
 	return map
 	
 	function SetElementSafe(list, x, y, size, value) {
@@ -1167,7 +1145,7 @@ function CreateCellMap(mapSize, scale, offset = 0, defaultHeight = -1) {
 	}
 }
 
-function GetColor(level) {
+function GetHeightColor(level) {
 	// level should be 0-1
 	let r = Clamp01(0.3 + level * 0.1)
 	let g = Clamp01(0.5 + level * 0.5)
@@ -1175,15 +1153,43 @@ function GetColor(level) {
 	return CreateVector3(r, g, b)
 }
 
-function applyCastleHeight(tileMap, x , y, castleHeight, size, heightScale = 1) {
-	for(i = 0; i < size; i++) {
-		for(j = 0; j < size; j++) {
+function ApplyCastleHeight(tileMap, x, y, castleHeight, size, heightScale = 1) {
+	for(var i = 0; i < size; i++) {
+		for(var j = 0; j < size; j++) {
 			tileMap.setHeight(x + i, y + j, castleHeight[i * size + j] * heightScale)
 		}
 	}
 }
 
+function SetSelectionBorder(tileMap, x, y, size, color, height) {
+	for(var i = 0; i < size; i++) {
+		for(var j = 0; j < size; j++) {
+			if (i == 0 || j == 0 || i == size - 1 || j == size - 1) {
+				tileMap.setHeight(x + i, y + j, height)
+				tileMap.setColor(x + i, y + j, color)
+			}
+		}
+	}
+}
+
+function ApplyCastleColor(tileMap, x , y, size, color) {
+	for(var i = 0; i < size; i++) {
+		for(var j = 0; j < size; j++) {
+			tileMap.setColor(x + i, y + j, color)
+		}
+	}
+}
+
+const mapOffsets = [
+    CreateVector3(-1,-1),
+    CreateVector3(-1, 1),
+    CreateVector3( 1, 1),
+    CreateVector3( 1,-1)
+]
+
+var castleTiles = CreateCellMap(85, 10, -0.00001, -50)
 var map = CreateCellMap(mapSize, 50, 50)
+
 for(i = 0; i < mapSize; i++)
 {
 	for(j = 0; j < mapSize; j++)
@@ -1191,7 +1197,7 @@ for(i = 0; i < mapSize; i++)
 		let height = Math.random() * 80
 
 		let position = CreateVector3(i - halfMapSize, j - halfMapSize)
-		let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.8 - 1)
+		let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.4 - 1)
 		height *= normalizedDistance
 		
 		let isBorder = !(i > 0 && j > 0 && i < mapSize - 1 && j < mapSize - 1);
@@ -1199,67 +1205,90 @@ for(i = 0; i < mapSize; i++)
 			height = -1
 
 		map.setHeight(i, j, height)
-		map.setColor(i, j, GetColor(height / 80))
+		map.setColor(i, j, GetHeightColor(height / 80))
 	}
 }
 map.rebuild()
 
-var castles = CreateCellMap(65, 10)
-for(i = 0; i < 60; i++)
-{
-	for(j = 0; j < 60; j++)
-	{
-		if (i < 30) {
-			castles.setColor(i, j, CreateVector3(0.8, 0.2, 0.2))
-		} else {
-			castles.setColor(i, j, CreateVector3(0.2, 0.2, 0.8))
-		}
-	}
-}
-const
-	_ = -1,
-	L = 0
-// castle
-var small = [
-	_, _, _, _, _,
-	_, 4, 2, 4, _,
-	_, 2, 0, 2, _,
-	_, 4, 2, 4, _,
-	_, _, _, _, _
-]
-// castle
-var medium = [
-	_, 4, 2, 4, _,
-	4, 2, 2, 2, 4,
-	2, 2, 5, 2, 2,
-	4, 2, 2, 2, 4,
-	_, 4, 2, 4, _
-]
-// castle
-var big = [
-	4, 2, 3, 2, 4,
-	2, 7, 5, 7, 2,
-	3, 5, 3, 5, 3,
-	2, 7, 5, 7, 2,
-	4, 2, 3, 2, 4
-]
+// const
+// 	_ = -0.000001
+// // castle
+// var small = [
+// 	_, _, _, _, _,
+// 	_, 4, 2, 4, _,
+// 	_, 2, 0, 2, _,
+// 	_, 4, 2, 4, _,
+// 	_, _, _, _, _
+// ]
+// // castle
+// var medium = [
+// 	_, 4, 2, 4, _,
+// 	4, 2, 2, 2, 4,
+// 	2, 2, 5, 2, 2,
+// 	4, 2, 2, 2, 4,
+// 	_, 4, 2, 4, _
+// ]
+// // castle
+// var big = [
+// 	4, 2, 3, 2, 4,
+// 	2, 7, 5, 7, 2,
+// 	3, 5, 3, 5, 3,
+// 	2, 7, 5, 7, 2,
+// 	4, 2, 3, 2, 4
+// ]
 
-applyCastleHeight(castles, 15, 15, big, 5, 6);
-applyCastleHeight(castles, 35, 15, small, 5, 6);
-applyCastleHeight(castles, 45, 5, small, 5, 6);
-applyCastleHeight(castles, 15, 35, small, 5, 6);
-applyCastleHeight(castles, 35, 35, medium, 5, 6);
-castles.rebuild()
+// ApplyCastleHeight(castleTiles, 15, 15, big, 5, 6);
+// ApplyCastleHeight(castleTiles, 35, 15, small, 5, 6);
+// ApplyCastleHeight(castleTiles, 45, 5, small, 5, 6);
+// ApplyCastleHeight(castleTiles, 15, 35, small, 5, 6);
+// ApplyCastleHeight(castleTiles, 35, 35, medium, 5, 6);
+// castleTiles.rebuild()
 const castleSize = 3;
-const troopSendDelay = 0.2;
+const troopSendDelay = 0.3;
 var castles = []
+var selectedCastle = null;
 
 function CreateCastle(x, y, factionId = -1, level=0) {
-	const sizes = [1, 2, 3];
-	const spawn = [1, 2, 3];
-	const upgradeCost = [15, 20, 999]
+	const
+		_ = -0.0001,
+		sizes = [1, 2, 3],
+		spawn = [1, 2, 3],
+		upgradeCost = [15, 20, 999],
+		whiteColor = CreateVector3(1, 1, 1),
+		grayColor = CreateVector3(0.5, 0.5, 0.5),
+		heightMap = [
+			// small castle
+			[
+				_, _, _, _, _,
+				_, 4, 2, 4, _,
+				_, 2, 0, 2, _,
+				_, 4, 2, 4, _,
+				_, _, _, _, _
+			],
+			// med castle
+			[
+				_, 4, 2, 4, _,
+				4, 2, 2, 2, 4,
+				2, 2, 5, 2, 2,
+				4, 2, 2, 2, 4,
+				_, 4, 2, 4, _
+			],
+			// big castle
+			[
+				4, 2, 3, 2, 4,
+				2, 7, 5, 7, 2,
+				3, 5, 3, 5, 3,
+				2, 7, 5, 7, 2,
+				4, 2, 3, 2, 4
+			]
+		]
+	
 	var castle = {
-		pos: [x, y],
+		coord: [x, y],
+		position: CreateVector3(x * 50, y * 50),
+		screenPosition: CreateVector3(),
+		screenTopPosition: CreateVector3(),
+		screenSize: [10, 10],
 		faction: factionId,
 		attackCount: 0,
 		pathToTarget: null,
@@ -1271,76 +1300,78 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		sendTroopTime: 0,
 		neibghors: [],
 		distance: 0,
+		depth: 0,
 		pathCastle: null,
+        prepareScene () {
+			this.screenPosition = WorldToScreenVector3(this.position)
+			this.screenTopPosition = WorldToScreenVector3(AddVector3(this.position, CreateVector3(0, 0, 64)))
+			let rectSize = Math.abs(this.screenTopPosition[1] - this.screenPosition[1])
+			this.screenSize = [rectSize * 1.2, rectSize]
+            this.depth = -this.screenPosition[2] - 1000
+        },
 		draw() {
-			canvas.fillStyle = getFactionColor(castle.faction);
-			let size = sizes[this.level];
-			fillRect(castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
-			canvas.textAlign = 'center';
-			fillText(castle.lives, castle.pos[0], castle.pos[1] - size - 1);
+			// Draw
+			canvas.fillStyle = Vector3ToColor(getFactionColorVector3(castle.faction))
+			canvas.textAlign = 'center'
+			fillText(castle.lives, castle.screenTopPosition[0], castle.screenTopPosition[1])
 			// upgrade marker
 			if (castle.lives >= upgradeCost[castle.level]) {
-				fillRect (castle.pos[0] + size + size, castle.pos[1] - size - size - 1, 1, 1)
+				fillText ("^", castle.screenTopPosition[0] + this.screenSize[0] * 0.5, castle.screenTopPosition[1])
 			}
-		},
-		drawSelection() {
-			canvas.fillStyle = '#FFFFFF';// white
-			let size = sizes[this.level] + 1;
-			fillRect (castle.pos[0] - size, castle.pos[1] - size, size + size, size + size)
-			// Move
-			canvas.fillStyle = '#FF00FF';
-			castles.forEach(c => {
-				if (c.pathCastle != null) {
-					let size = sizes[c.level] + 1;
-					fillRect(c.pos[0] - size, c.pos[1] - size, size + size, size + size)
-				}
-			});
 		},
 		upgrade() {
 			if (this.lives >= upgradeCost[castle.level]) {
 				this.lives -= upgradeCost[castle.level]
 				this.level += 1
+				// update size
+				this.rebuild()
 			}
 		},
 		update(dt) {
-			this.reloadTime -= dt;
+			this.reloadTime -= dt
 			if (this.reloadTime <= 0) {
-				this.reloadTime = reloadTime;
+				this.reloadTime = reloadTime
 				if (this.faction >= 0 && castle.lives < castle.max) {
-					this.lives += spawn[this.level];
+					this.lives += spawn[this.level]
 				}
 			}
 			if (this.sendTroopTime > 0) {
-				this.sendTroopTime -= dt;
+				this.sendTroopTime -= dt
 			} else {
 				if (this.lives > 0 && this.attackCount > 0) {
-					this.lives -= 1;
-					this.attackCount -= 1;
-					CreateUnit(this.pos[0], this.pos[1], this.faction, this.pathToTarget);
-					this.sendTroopTime += troopSendDelay;
+					let unitsToSend = 3
+					while (unitsToSend > 0 && this.attackCount > 0 && this.lives > 0) {
+						this.lives -= 1
+						this.attackCount -= 1
+						CreateUnit(this.coord[0], this.coord[1], this.faction, this.pathToTarget, (unitsToSend - 2))
+						unitsToSend -= 1
+					}
+					this.sendTroopTime += troopSendDelay
 				} else {
-					this.target = null;
+					this.target = null
 				} 
 			}
 		},
 		
 		contains(x, y) {
-			let pos = castle.pos;
 			return (
-				pos[0] - castleSize < x && 
-				pos[1] - castleSize < y && 
-				pos[0] + castleSize > x && 
-				pos[1] + castleSize > y)
+				this.screenPosition[0] - this.screenSize[0] < x && 
+				this.screenPosition[1] - this.screenSize[1] < y && 
+				this.screenPosition[0] + this.screenSize[0] > x && 
+				this.screenPosition[1] + this.screenSize[1] > y
+			)
 		},
 		attack(factionId) {
 			if (this.faction == factionId) {
-				this.lives += 1;
+				this.lives += 1
 			} else {
 				if (this.lives <= 0) {
-					this.faction = factionId;
-					this.lives = 1;
+					this.faction = factionId
+					// update color
+					this.rebuild()
+					this.lives = 1
 				} else {
-					this.lives -= 1;
+					this.lives -= 1
 				}
 			}
 		},
@@ -1358,28 +1389,52 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			}
 			this.pathToTarget = pathToTarget
 		},
+		rebuild() {
+			ApplyCastleHeight(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, heightMap[this.level], 5, 6);
+			ApplyCastleColor(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, 5, getFactionColorVector3(this.faction))
+			castleTiles.rebuild()
+		},
+		setSelected(isSelected) {
+			let 
+				height = -0.00001,
+				color = whiteColor
+			if (this.pathCastle != null) {
+				color = grayColor
+				height = 0
+			}
+			if (isSelected) {
+				height = 0
+			}
+			SetSelectionBorder(castleTiles, 39 + this.coord[0] * 5, 39 + this.coord[1] * 5, 7, color, height)
+		}
 	}
 	gameObjects.push(castle)
-	drawObjects.push(castle)
+	//drawObjects.push(castle)
+	objects3d.push(castle)
 	castles.push(castle)
+	castle.rebuild()
 	return castle;
 }
 
-function getFactionColor(factionId) {
+function updateSelection() {
+	castles.forEach(c => c.setSelected(c == selectedCastle));
+	castleTiles.rebuild()
+}
+function getFactionColorVector3(factionId) {
 	switch (factionId) {
-		case 0: return '#0000FF'; // player
-		case 1: return '#FF0000'; // enemy
-		case 2: return '#00FF00'; // enemy 2
+		case 0: return CreateVector3(0.2, 0.2, 1.0); // player
+		case 1: return CreateVector3(1.0, 0.2, 0.2); // enemy
+		case 2: return CreateVector3(0.2, 1.0, 0.2); // enemy 2
 		case -1:
 		default:	
-			return '#555555'; // neutral
+			return CreateVector3(0.6, 0.6, 0.6); // neutral
 	}
 }
 
 function getCastle(pos) {
 	let
-		x = (pos[0] - centerX) / screenScale,
-		y = (pos[1] - centerY) / screenScale
+		x = pos[0],
+		y = pos[1]
 
 	for(var i = 0; i < castles.length; i++) {
 		if (castles[i].contains(x, y)) {
@@ -1392,7 +1447,7 @@ function getCastle(pos) {
 function findNeibghors(maxDistance) {
 	for(var i = 0; i < castles.length; i++) {
 		for(var j = 0; j < castles.length; j++) {
-			if (i != j && Vector2Distance(castles[i].pos, castles[j].pos) < maxDistance) {
+			if (i != j && Vector2Distance(castles[i].coord, castles[j].coord) < maxDistance) {
 				castles[i].neibghors.push(castles[j]);
 			}
 		}
@@ -1415,7 +1470,7 @@ function findAvailableForMoveCastles(startCastle) {
 		let castle = openList.pop()
 		castle.neibghors.forEach(
 			nCastle => {
-				let distanceFromStart = castle.distance + Vector2Distance(castle.pos, nCastle.pos)
+				let distanceFromStart = castle.distance + Vector2Distance(castle.coord, nCastle.coord)
 				if (nCastle.distance > distanceFromStart) {
 					nCastle.distance = distanceFromStart
 					nCastle.pathCastle = castle
@@ -1426,34 +1481,71 @@ function findAvailableForMoveCastles(startCastle) {
 			})
 	}
 }
-const unitSize = 1;
-const unitSpeed = 10;
-const zeroVector = [0, 0];
+const
+	unitHeight = 5,
+	unitSize = 1,
+	unitSpeed = 1,
+	zeroVector = [0, 0];
 
-function CreateUnit(x, y, factionId, pathToTarget) {
+function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 	var unit = {
-		pos: [x, y],
+		offset: offset,
+		offsetVector: [0, 0],
+		coord: [x, y],
+		position: CreateVector3(x * 50, y * 50),
+		screenPosition: CreateVector3(),
+		screenPositionTop: CreateVector3(),
 		velocity: zeroVector,
 		moveTime: 0,
 		faction: factionId,
 		target: null,
 		path: [...pathToTarget],
 		lives: 1,
-		draw(canvas) {
-			canvas.fillStyle = getFactionColor(unit.faction);
-			fillRect (unit.pos[0] - unitSize, unit.pos[1] - unitSize, unitSize + unitSize, unitSize + unitSize)
+        prepareScene () {
+			this.screenPosition = WorldToScreenVector3(this.position)
+			this.screenPositionTop = WorldToScreenVector3(AddVector3(this.position, CreateVector3(0, 0, unitHeight)))
+           // this.depth = -this.screenPosition[2] - 50
+            this.depth = -this.screenPosition[2] - 500
+        },
+		draw() {
+			// Draw unit
+			var height = Math.abs(SubstractVector3(this.screenPosition, this.screenPositionTop)[2]);
+			var smallHeight = height * 0.2;
+			var width = height * 0.34;
+			let shieldLeft = [
+				AddVector3(this.screenPosition, CreateVector3(0, smallHeight)),
+				AddVector3(this.screenPosition, CreateVector3(width, 0)),
+				AddVector3(this.screenPosition, CreateVector3(width, -height)),
+				AddVector3(this.screenPosition, CreateVector3(0, -height)),
+			]
+			let shieldRight = [
+				AddVector3(this.screenPosition, CreateVector3(0, smallHeight)),
+				AddVector3(this.screenPosition, CreateVector3(0, -height)),
+				AddVector3(this.screenPosition, CreateVector3(-width, -height)),
+				AddVector3(this.screenPosition, CreateVector3(-width, 0)),
+			]
+			// canvas.fillRect  (this.screenPosition[0] - width, this.screenPosition[1] - height, width + width, height)
+			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(unit.faction), 0.95));
+			DrawQuad(shieldLeft)
+			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(unit.faction), 0.85));
+			DrawQuad(shieldRight)
 		},
 		update(dt) {
 			// move to point
-			unit.pos = AddVector2(unit.pos, MultiplyVector2(unit.velocity, dt))
+			unit.coord = AddVector2(unit.coord, MultiplyVector2(unit.velocity, dt))
+			unit.position = [
+				(unit.coord[0] + unit.offsetVector[0] * unit.offset * 0.2) * 50,
+				(unit.coord[1] + unit.offsetVector[1] * unit.offset * 0.2) * 50,
+				Sin(this.moveTime * 30 + this.offset) * 2]
 			unit.moveTime -= dt
 			// if movement ended - check do we have path or this is the end point of path
 			if (unit.moveTime <= 0) {
 				if (unit.path.length > 0) {
 					// get next point from path stack
 					unit.target = unit.path.pop()
-					var delta = SubstractVector2(unit.target.pos, unit.pos)
+					var delta = SubstractVector2(unit.target.coord, unit.coord)
 					var direction = NormalizeVector2(delta)
+					unit.offsetVector = [-direction[1], direction[0]] // prependicular
 					var distance = Vector2Length(delta)
 					unit.velocity = MultiplyVector2(direction, unitSpeed)
 					unit.moveTime = distance / unitSpeed
@@ -1462,13 +1554,15 @@ function CreateUnit(x, y, factionId, pathToTarget) {
 					unit.target.attack(unit.faction)
 					// kill
 					removeItem(gameObjects, unit)
-					removeItem(drawObjects, unit)
+					// removeItem(drawObjects, unit)
+					removeItem(objects3d, unit)
 				}
 			}
 		},
 	}
 	gameObjects.push(unit)
-	drawObjects.push(unit)
+	objects3d.push(unit)
+	// drawObjects.push(unit)
 	return unit;
 }
 
@@ -1503,18 +1597,17 @@ UpdateCanvasSize()
 
 // init
 let rect = canvasElement.getBoundingClientRect();
-var selectedCastle = null;
 
 var gameObjects = [];
 var drawObjects = [];
-CreateCastle(-40, 0, 0, 2)
-CreateCastle(40, 0, 1, 2)
+CreateCastle(-6, 0, 0, 2)
+CreateCastle(6, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
 	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 20, j * 20)
+		CreateCastle(i * 3, j * 3)
 	}
 }
-findNeibghors(30);
+findNeibghors(6)
 
 var input = Input(rect)
 gameObjects.push(input)
@@ -1537,10 +1630,6 @@ function render() {
 
 	canvas.fillStyle    = '#333333';  // black
 	canvas.strokeStyle    = '#101010';  // black
-	// Selected castle
-	if (selectedCastle != null) {
-		selectedCastle.drawSelection(canvas)
-	}
 
 	// castles
 	drawObjects.forEach(g => g.draw(canvas))
@@ -1554,8 +1643,9 @@ function render() {
 
 function update(dt) {
 	if (input.mouseLeftDown) {
-		selectedCastle = getCastle(input.mousePosition);
+		selectedCastle = getCastle(input.mousePosition)
 		findAvailableForMoveCastles(selectedCastle)
+		updateSelection()
 	}
 	if (input.mouseRightDown) {
 		let target = getCastle(input.mousePosition);
@@ -1572,12 +1662,10 @@ function update(dt) {
     }
 	gameObjects.forEach(g => g.update(dt));
 	// rotate camera
-    //angle += 20 * dt
-    //currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), angle)
+    // angle += 20 * dt
+	// SetCameraAngle(angle)
 	angle += 0.1 * dt
-	currentMatrix = CreateRotationMatrix3(CreateVector3(0, 0, 1), Sin(angle) * 10 + 45)
-	let pitch = CreateRotationMatrix3(CreateVector3(1, 0, 0), 40)
-    cameraWorldMatrix = MultiplyMatrix3(pitch, currentMatrix)
+	SetCameraAngle(Sin(angle) * 10 + 45)
 }
 
 let animationFrameFunction = requestAnimationFrame
@@ -1620,11 +1708,19 @@ function UpdateCanvasSize() {
 	SetCameraSize(width, height)
 }
 
+function fillText(text, x, y) {
+	canvas.fillText(text, x, y);
+}
+
 function fillRect(x, y, w, h) {
+	canvas.fillRect (x, y, w, h)
+}
+
+function fillRectScreen(x, y, w, h) {
 	canvas.fillRect (x * screenScale + centerX, y * screenScale + centerY, w * screenScale, h * screenScale)
 }
 
-function fillText(text, x, y) {
+function fillTextScreen(text, x, y) {
 	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
 }
 
