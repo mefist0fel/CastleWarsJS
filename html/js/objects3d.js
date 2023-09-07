@@ -55,7 +55,7 @@ function WorldToScreenVector3 (point) {
 }
 
 // 3d Quad class
-function CreateQuad3D (a, b, c, d, color = CreateVector3(1, 1, 1)) {
+function CreateQuad3D (a, b, c, d, color = CreateVector3(1, 1, 1), offset=0) {
     var quad = {
 		screenPoints: [a, b, c, d],
 		depth: 0,
@@ -74,7 +74,7 @@ function CreateQuad3D (a, b, c, d, color = CreateVector3(1, 1, 1)) {
         prepareScene () {
             if (!quad.enable)
                 return
-            quad.depth = -WorldToScreenVector3(quad.position)[2]
+            quad.depth = -WorldToScreenVector3(quad.position)[2] + offset
             for(let i = 0; i < quad.screenPoints.length; i++) {
                 quad.screenPoints[i] = WorldToScreenVector3(quad.points[i])
             }

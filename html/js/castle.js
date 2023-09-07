@@ -9,6 +9,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		sizes = [1, 2, 3],
 		spawn = [1, 2, 3],
 		upgradeCost = [15, 20, 999],
+		whiteColor = CreateVector3(1, 1, 1),
 		heightMap = [
 			// small castle
 			[
@@ -37,9 +38,11 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		]
 	
 	var castle = {
-		pos2d: [x * 10, y * 10],
 		coord: [x, y],
-		position: CreateVector3(x * 5, y * 5),
+		position: CreateVector3(x * 50, y * 50),
+		screenPosition: CreateVector3(),
+		screenTopPosition: CreateVector3(),
+		screenSize: [10, 10],
 		faction: factionId,
 		attackCount: 0,
 		pathToTarget: null,
@@ -54,32 +57,20 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		depth: 0,
 		pathCastle: null,
         prepareScene () {
-            this.depth = -WorldToScreenVector3(this.position)[2] - 1000
+			this.screenPosition = WorldToScreenVector3(this.position)
+			this.screenTopPosition = WorldToScreenVector3(AddVector3(this.position, CreateVector3(0, 0, 64)))
+			let rectSize = Math.abs(this.screenTopPosition[1] - this.screenPosition[1])
+			this.screenSize = [rectSize * 1.2, rectSize]
+            this.depth = -this.screenPosition[2] - 1000
         },
 		draw() {
-			// selection
-			if (this == selectedCastle) {
-				canvas.fillStyle = '#FFFFFF';// white
-				let size = sizes[this.level] + 1;
-				fillRectScreen (castle.pos2d[0] - size, castle.pos2d[1] - size, size + size, size + size)
-				// Move
-				canvas.fillStyle = '#FF00FF';
-				castles.forEach(c => {
-					if (c.pathCastle != null) {
-						let size = sizes[c.level] + 1;
-						fillRectScreen(c.pos2d[0] - size, c.pos2d[1] - size, size + size, size + size)
-					}
-				});
-			}
 			// Draw
-			canvas.fillStyle = getFactionColor(castle.faction);
-			let size = sizes[this.level];
-			fillRectScreen(castle.pos2d[0] - size, castle.pos2d[1] - size, size + size, size + size)
-			canvas.textAlign = 'center';
-			fillText(castle.lives, castle.pos2d[0], castle.pos2d[1] - size - 1);
+			canvas.fillStyle = Vector3ToColor(getFactionColorVector3(castle.faction))
+			canvas.textAlign = 'center'
+			fillText(castle.lives, castle.screenTopPosition[0], castle.screenTopPosition[1])
 			// upgrade marker
 			if (castle.lives >= upgradeCost[castle.level]) {
-				fillRectScreen (castle.pos2d[0] + size + size, castle.pos2d[1] - size - size - 1, 1, 1)
+				fillText ("^", castle.screenTopPosition[0] + this.screenSize[0], castle.screenTopPosition[1])
 			}
 		},
 		upgrade() {
@@ -117,12 +108,12 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		},
 		
 		contains(x, y) {
-			let pos2d = castle.pos2d
 			return (
-				pos2d[0] - castleSize < x && 
-				pos2d[1] - castleSize < y && 
-				pos2d[0] + castleSize > x && 
-				pos2d[1] + castleSize > y)
+				this.screenPosition[0] - this.screenSize[0] < x && 
+				this.screenPosition[1] - this.screenSize[1] < y && 
+				this.screenPosition[0] + this.screenSize[0] > x && 
+				this.screenPosition[1] + this.screenSize[1] > y
+			)
 		},
 		attack(factionId) {
 			if (this.faction == factionId) {
@@ -156,6 +147,14 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			ApplyCastleHeight(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, heightMap[this.level], 5, 6);
 			ApplyCastleColor(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, 5, getFactionColorVector3(this.faction))
 			castleTiles.rebuild()
+		},
+		setSelected(isSelected) {
+			let height = -0.00001
+			if (isSelected) {
+				height = 0;
+			}
+			SetSelectionBorder(castleTiles, 39 + this.coord[0] * 5, 39 + this.coord[1] * 5, 7, whiteColor, height)
+			castleTiles.rebuild()
 		}
 	}
 	gameObjects.push(castle)
@@ -166,17 +165,10 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 	return castle;
 }
 
-function getFactionColor(factionId) {
-	switch (factionId) {
-		case 0: return '#0000FF'; // player
-		case 1: return '#FF0000'; // enemy
-		case 2: return '#00FF00'; // enemy 2
-		case -1:
-		default:	
-			return '#555555'; // neutral
-	}
+function setSelected(castle) {
+	selectedCastle = castle
+	castles.forEach(c => c.setSelected(c == selectedCastle));
 }
-
 function getFactionColorVector3(factionId) {
 	switch (factionId) {
 		case 0: return CreateVector3(0.2, 0.2, 1.0); // player
@@ -190,8 +182,8 @@ function getFactionColorVector3(factionId) {
 
 function getCastle(pos) {
 	let
-		x = (pos[0] - centerX) / screenScale,
-		y = (pos[1] - centerY) / screenScale
+		x = pos[0],
+		y = pos[1]
 
 	for(var i = 0; i < castles.length; i++) {
 		if (castles[i].contains(x, y)) {

@@ -69,7 +69,7 @@ function render() {
 
 function update(dt) {
 	if (input.mouseLeftDown) {
-		selectedCastle = getCastle(input.mousePosition);
+		setSelected(getCastle(input.mousePosition));
 		findAvailableForMoveCastles(selectedCastle)
 	}
 	if (input.mouseRightDown) {
@@ -133,10 +133,18 @@ function UpdateCanvasSize() {
 	SetCameraSize(width, height)
 }
 
+function fillText(text, x, y) {
+	canvas.fillText(text, x, y);
+}
+
+function fillRect(x, y, w, h) {
+	canvas.fillRect (x, y, w, h)
+}
+
 function fillRectScreen(x, y, w, h) {
 	canvas.fillRect (x * screenScale + centerX, y * screenScale + centerY, w * screenScale, h * screenScale)
 }
 
-function fillText(text, x, y) {
+function fillTextScreen(text, x, y) {
 	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
 }

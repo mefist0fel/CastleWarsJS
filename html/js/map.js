@@ -14,7 +14,7 @@ const tileOffsets = [
 
 //CreateQuad3D(tileOffsets[0], tileOffsets[1], tileOffsets[2], tileOffsets[3])
 
-function CreateCellMap(mapSize, scale, defaultHeight = -1) {
+function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 	let pointsLen = mapSize * 4;
 	let map = {
 		heightMap: CreateArray(mapSize * mapSize),
@@ -37,7 +37,6 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1) {
 			return GetElementSafe(this.colors, x, y, this.size, CreateVector3())
 		},
 		rebuild() {
-			//let points = CreateArray(4)
 			for(var i = 0; i < this.size; i++)
 			{
 				for(var j = 0; j < this.size; j++)
@@ -49,8 +48,6 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1) {
 						let ptIndex = GetMapIndex(i * 2 + Math.floor(pointIdx / 2) ,  j * 2 + pointIdx % 2, pointsLen)
 						this.points[ptIndex] = AddVector3(position, MultiplyVector3(tileOffsets[pointIdx], mapHalfScale))
 					}
-					//this.tiles[index].setPoints(points[0], points[1], points[2], points[3])
-					//this.tiles[index].setColor(this.colors[index])
 				}
 			}
 			for(var i = 0; i < this.size; i++)
@@ -117,9 +114,9 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1) {
 			let index = GetMapIndex(i, j, map.size)
 			map.heightMap[index] = defaultHeight
 			let color = CreateVector3(1, 1, 1)
-			map.tiles[index] = CreateQuad3D(color, color, color, color, color)
-			map.tilesTop[index] = CreateQuad3D(color, color, color, color, color)
-			map.tilesLeft[index] = CreateQuad3D(color, color, color, color, color)
+			map.tiles[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
+			map.tilesTop[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
+			map.tilesLeft[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
 			map.colors[index] = color;
 		}
 	}
@@ -154,10 +151,21 @@ function GetHeightColor(level) {
 	return CreateVector3(r, g, b)
 }
 
-function ApplyCastleHeight(tileMap, x , y, castleHeight, size, heightScale = 1) {
+function ApplyCastleHeight(tileMap, x, y, castleHeight, size, heightScale = 1) {
 	for(var i = 0; i < size; i++) {
 		for(var j = 0; j < size; j++) {
 			tileMap.setHeight(x + i, y + j, castleHeight[i * size + j] * heightScale)
+		}
+	}
+}
+
+function SetSelectionBorder(tileMap, x, y, size, color, height) {
+	for(var i = 0; i < size; i++) {
+		for(var j = 0; j < size; j++) {
+			if (i == 0 || j == 0 || i == size - 1 || j == size - 1) {
+				tileMap.setHeight(x + i, y + j, height)
+				tileMap.setColor(x + i, y + j, color)
+			}
 		}
 	}
 }
@@ -177,7 +185,9 @@ const mapOffsets = [
     CreateVector3( 1,-1)
 ]
 
+var castleTiles = CreateCellMap(85, 10, -0.00001, -50)
 var map = CreateCellMap(mapSize, 50, 50)
+
 for(i = 0; i < mapSize; i++)
 {
 	for(j = 0; j < mapSize; j++)
@@ -198,49 +208,36 @@ for(i = 0; i < mapSize; i++)
 }
 map.rebuild()
 
-var castleTiles = CreateCellMap(85, 10)
-for(i = 0; i < 80; i++)
-{
-	for(j = 0; j < 80; j++)
-	{
-		if (i < 40) {
-			castleTiles.setColor(i, j, CreateVector3(0.8, 0.2, 0.2))
-		} else {
-			castleTiles.setColor(i, j, CreateVector3(0.2, 0.2, 0.8))
-		}
-	}
-}
-
-const
-	_ = -0.000001
-// castle
-var small = [
-	_, _, _, _, _,
-	_, 4, 2, 4, _,
-	_, 2, 0, 2, _,
-	_, 4, 2, 4, _,
-	_, _, _, _, _
-]
-// castle
-var medium = [
-	_, 4, 2, 4, _,
-	4, 2, 2, 2, 4,
-	2, 2, 5, 2, 2,
-	4, 2, 2, 2, 4,
-	_, 4, 2, 4, _
-]
-// castle
-var big = [
-	4, 2, 3, 2, 4,
-	2, 7, 5, 7, 2,
-	3, 5, 3, 5, 3,
-	2, 7, 5, 7, 2,
-	4, 2, 3, 2, 4
-]
+// const
+// 	_ = -0.000001
+// // castle
+// var small = [
+// 	_, _, _, _, _,
+// 	_, 4, 2, 4, _,
+// 	_, 2, 0, 2, _,
+// 	_, 4, 2, 4, _,
+// 	_, _, _, _, _
+// ]
+// // castle
+// var medium = [
+// 	_, 4, 2, 4, _,
+// 	4, 2, 2, 2, 4,
+// 	2, 2, 5, 2, 2,
+// 	4, 2, 2, 2, 4,
+// 	_, 4, 2, 4, _
+// ]
+// // castle
+// var big = [
+// 	4, 2, 3, 2, 4,
+// 	2, 7, 5, 7, 2,
+// 	3, 5, 3, 5, 3,
+// 	2, 7, 5, 7, 2,
+// 	4, 2, 3, 2, 4
+// ]
 
 // ApplyCastleHeight(castleTiles, 15, 15, big, 5, 6);
 // ApplyCastleHeight(castleTiles, 35, 15, small, 5, 6);
 // ApplyCastleHeight(castleTiles, 45, 5, small, 5, 6);
 // ApplyCastleHeight(castleTiles, 15, 35, small, 5, 6);
 // ApplyCastleHeight(castleTiles, 35, 35, medium, 5, 6);
-castleTiles.rebuild()
+// castleTiles.rebuild()
