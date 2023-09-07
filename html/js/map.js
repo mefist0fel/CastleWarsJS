@@ -195,7 +195,7 @@ for(i = 0; i < mapSize; i++)
 		let height = Math.random() * 80
 
 		let position = CreateVector3(i - halfMapSize, j - halfMapSize)
-		let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.8 - 1)
+		let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.4 - 1)
 		height *= normalizedDistance
 		
 		let isBorder = !(i > 0 && j > 0 && i < mapSize - 1 && j < mapSize - 1);
