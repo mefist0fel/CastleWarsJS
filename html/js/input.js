@@ -1,4 +1,4 @@
-function Input(rect) {
+function CreateInput(rect) {
 	//  KEY KODES
 	//	BACKSPACE: 8,
 	//	TAB:       9,	RETURN:   13,

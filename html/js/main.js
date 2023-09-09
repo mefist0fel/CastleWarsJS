@@ -35,8 +35,10 @@ for(var i = -1; i < 2; i++) {
 }
 findNeibghors(6)
 
-var input = Input(rect)
+var input = CreateInput(rect)
 gameObjects.push(input)
+
+CreateEnemy(castles)
 
 function timestamp() {
 	let perf = window.performance;
@@ -79,6 +81,7 @@ function update(dt) {
 			if (selectedCastle == target) {
 				selectedCastle.upgrade()
 			} else {
+				findAvailableForMoveCastles(selectedCastle)
 				selectedCastle.sendArmy(target)
 			}
 		}

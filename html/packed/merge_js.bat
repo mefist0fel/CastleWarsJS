@@ -1,1 +1,1 @@
-copy ..\js\geometry.js + ..\js\input.js + ..\js\jsfxr.js + ..\js\audio.js + ..\js\objects3d.js + ..\js\map.js + ..\js\castle.js + ..\js\unit.js + ..\js\main.js merged.js
+copy ..\js\geometry.js + ..\js\input.js + ..\js\jsfxr.js + ..\js\audio.js + ..\js\objects3d.js + ..\js\map.js + ..\js\castle.js + ..\js\unit.js + ..\js\enemy.js + ..\js\main.js merged.js
