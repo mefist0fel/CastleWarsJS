@@ -184,6 +184,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 	function GetMapIndex(i, j, xFactor = 1, yFactor = 1) {
 		return i * xFactor + j * yFactor;
 	}
+	
 	function Merge(from, to, speed) {
 		if (from > to) {
 			from -= speed
@@ -276,35 +277,35 @@ function CreateLevel(id) {
 			const
 				_ = -0.0001,
 				A = 15,
-				F = 12
-			let castleHeights = [
-				A, F, A, F, A,
-				F, F, F, F, F,
-				A, F, F, F, A,
-				F, F, F, F, F,
-				A, F, A, F, A
-			]
-			let castleTower = [
-				7, 6, 7, 6, 7,
-				6, 6, 6, 6, 6,
-				7, 6, 2, 6, 7,
-				6, 6, 6, 6, 6,
-				7, 6, 7, 6, 7,
-			]
-			let wallVer = [
-				_, 4, 3, 4, _,
-				_, 3, 3, 3, _,
-				_, 4, 3, 4, _,
-				_, 3, 3, 3, _,
-				_, 4, 3, 4, _,
-			]
-			let wallHor = [
-				_, _, _, _, _,
-				4, 3, 4, 3, 4,
-				3, 3, 3, 3, 3,
-				4, 3, 4, 3, 4,
-				_, _, _, _, _,
-			]
+				F = 12,
+				castleHeights = [
+					A, F, A, F, A,
+					F, F, F, F, F,
+					A, F, F, F, A,
+					F, F, F, F, F,
+					A, F, A, F, A
+				],
+				castleTower = [
+					7, 6, 7, 6, 7,
+					6, 6, 6, 6, 6,
+					7, 6, 2, 6, 7,
+					6, 6, 6, 6, 6,
+					7, 6, 7, 6, 7,
+				],
+				wallVer = [
+					_, 4, 3, 4, _,
+					_, 3, 3, 3, _,
+					_, 4, 3, 4, _,
+					_, 3, 3, 3, _,
+					_, 4, 3, 4, _,
+				], 
+				wallHor = [
+					_, _, _, _, _,
+					4, 3, 4, 3, 4,
+					3, 3, 3, 3, 3,
+					4, 3, 4, 3, 4,
+					_, _, _, _, _,
+				]
 			// angular towers
 			ApplyCastleHeight(castleTiles, 33, 33, castleTower, 5, 6);
 			ApplyCastleHeight(castleTiles, 33, 47, castleTower, 5, 6);

@@ -17,7 +17,8 @@ var now,
 	screenScale = 1, // find size of 1/10 cell
 	docElement = doc.documentElement,
 	cameraValue = 0,
-	angle = 0
+	angle = 0,
+	gameObjects = []
 
 updateCanvasSize()
 
@@ -26,7 +27,6 @@ let rect = canvasElement.getBoundingClientRect();
 
 var
 	input = CreateInput(rect),
-	gameObjects = [],
 	enemy = CreateEnemy(),
 	currentLevel = 0,
 	stateFunction = null
@@ -71,6 +71,22 @@ function setState(state){
 		stateFunction = updateGame
 		return
 	}
+}
+
+function rotateCamera(dt) {
+	// rotate camera
+    angle += 8 * dt
+	if (angle > 360) {
+		angle -= 360
+	}
+	SetCameraAngle(angle)
+}
+
+function fixedCamera(dt) {
+	cameraValue += 0.1 * dt
+	var needCamera = Sin(cameraValue) * 10 + 65
+	angle = angle * 0.9 + needCamera * 0.1
+	SetCameraAngle(angle)
 }
 
 function updateWin(dt) {
@@ -305,20 +321,4 @@ function button(text, x, y, w, h) {
 		}
 	}
 	return false
-}
-
-function rotateCamera(dt) {
-	// rotate camera
-    angle += 8 * dt
-	if (angle > 360) {
-		angle -= 360
-	}
-	SetCameraAngle(angle)
-}
-
-function fixedCamera(dt) {
-	cameraValue += 0.1 * dt
-	var needCamera = Sin(cameraValue) * 10 + 65
-	angle = angle * 0.9 + needCamera * 0.1
-	SetCameraAngle(angle)
 }
