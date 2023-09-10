@@ -18,7 +18,10 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 		velocity: zeroVector,
 		moveTime: 0,
 		faction: factionId,
+		scale: 1,
 		target: null,
+		currentCoord: [x, y],
+		targetCoord: [x, y],
 		path: [...pathToTarget],
 		lives: 1,
         prepareScene () {
@@ -29,7 +32,7 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
         },
 		draw() {
 			// Draw unit
-			var height = Math.abs(SubstractVector3(this.screenPosition, this.screenPositionTop)[2]);
+			var height = Math.abs(SubstractVector3(this.screenPosition, this.screenPositionTop)[2]) * this.scale;
 			var smallHeight = height * 0.2;
 			var width = height * 0.34;
 			let shieldLeft = [
@@ -57,12 +60,18 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 				(unit.coord[0] + unit.offsetVector[0] * unit.offset * 0.2) * 50,
 				(unit.coord[1] + unit.offsetVector[1] * unit.offset * 0.2) * 50,
 				Sin(this.moveTime * 30 + this.offset) * 2]
+			unit.scale = Clamp01(Min(
+				(manhattanDistance(unit.coord, unit.currentCoord) - 0.05) * 20,
+				(manhattanDistance(unit.coord, unit.targetCoord) - 0.05) * 20,
+			))
 			unit.moveTime -= dt
 			// if movement ended - check do we have path or this is the end point of path
 			if (unit.moveTime <= 0) {
 				if (unit.path.length > 0) {
 					// get next point from path stack
 					unit.target = unit.path.pop()
+					unit.currentCoord = unit.targetCoord 
+					unit.targetCoord = unit.target.coord
 					var delta = SubstractVector2(unit.target.coord, unit.coord)
 					var direction = NormalizeVector2(delta)
 					unit.offsetVector = [-direction[1], direction[0]] // prependicular
@@ -100,4 +109,8 @@ function removeItem(array, item) {
 	if (index > -1) {
 		array.splice(index, 1);
 	}
+}
+
+function manhattanDistance(coordA, coordB) {
+	return Min(Abs(coordA[0] - coordB[0]), Abs(coordA[1] - coordB[1]), )
 }

@@ -6,6 +6,7 @@ const Cos = Math.cos
 const Sin = Math.sin
 const Min = Math.min
 const Max = Math.max
+const Abs = Math.abs
 const Round = Math.round
 const Random = Math.random
 const Floor = Math.floor
