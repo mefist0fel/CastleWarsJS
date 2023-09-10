@@ -250,7 +250,7 @@ for(var i = 0; i < mapSize; i++)
 {
 	for(var j = 0; j < mapSize; j++)
 	{
-		let height = Random() * 80
+		let height =  GetNoiseA(i, j, 0.6) * 80
 
 		let position = CreateVector3(i - halfMapSize, j - halfMapSize)
 		let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.4 - 1)
