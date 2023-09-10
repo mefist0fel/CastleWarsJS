@@ -19,7 +19,7 @@ var now,
 	currentMatrix = CreateUnitMatrix3(),
 	angle = 0
 
-UpdateCanvasSize()
+updateCanvasSize()
 
 // init
 let rect = canvasElement.getBoundingClientRect();
@@ -91,7 +91,7 @@ function frame() {
 	animationFrameFunction(frame);
 	// update canvas on window change
 	if (width != docElement.clientWidth || height != docElement.clientHeight) {
-		UpdateCanvasSize()
+		updateCanvasSize()
 	}
 }
 animationFrameFunction(frame);
@@ -101,7 +101,7 @@ function timestamp() {
 	return perf && perf.now ? perf.now() : new Date().getTime();
 }
 
-function UpdateCanvasSize() {
+function updateCanvasSize() {
 	width = docElement.clientWidth
 	height = docElement.clientHeight
 	minSize = Math.min(width, height)
