@@ -325,7 +325,7 @@ function MultiplyMatrix4(ma, mb) {
 	// function ontouchmove(event) {
 	// }
 
-	// addEvent('contextmenu', preventmenu);
+	addEvent('contextmenu', preventmenu);
 
 	addEvent('keydown',    onkeydown );
 	addEvent('keyup',      onkeyup   );
@@ -1079,6 +1079,17 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 					}
 				}
 			}
+		},
+		clear() {
+			for(i = 0; i < this.size; i++)
+			{
+				for(j = 0; j < this.size; j++)
+				{
+					let index = GetMapIndex(i, j, this.size)
+					this.heightMap[index] = defaultHeight
+				}
+			}
+			this.rebuild()
 		}
 	}
 
@@ -1187,40 +1198,43 @@ for(i = 0; i < mapSize; i++)
 }
 map.rebuild()
 
-// const
-// 	_ = -0.000001
-// // castle
-// var small = [
-// 	_, _, _, _, _,
-// 	_, 4, 2, 4, _,
-// 	_, 2, 0, 2, _,
-// 	_, 4, 2, 4, _,
-// 	_, _, _, _, _
-// ]
-// // castle
-// var medium = [
-// 	_, 4, 2, 4, _,
-// 	4, 2, 2, 2, 4,
-// 	2, 2, 5, 2, 2,
-// 	4, 2, 2, 2, 4,
-// 	_, 4, 2, 4, _
-// ]
-// // castle
-// var big = [
-// 	4, 2, 3, 2, 4,
-// 	2, 7, 5, 7, 2,
-// 	3, 5, 3, 5, 3,
-// 	2, 7, 5, 7, 2,
-// 	4, 2, 3, 2, 4
-// ]
-
-// ApplyCastleHeight(castleTiles, 15, 15, big, 5, 6);
-// ApplyCastleHeight(castleTiles, 35, 15, small, 5, 6);
-// ApplyCastleHeight(castleTiles, 45, 5, small, 5, 6);
-// ApplyCastleHeight(castleTiles, 15, 35, small, 5, 6);
-// ApplyCastleHeight(castleTiles, 35, 35, medium, 5, 6);
-// castleTiles.rebuild()
-const castleSize = 3;
+function CreateLevel(id) {
+	removeUnits()
+	removeCastles()
+	castleTiles.clear()
+	enemy.enable = true
+	switch (id) {
+		case 0:
+			CreateCastle(3, 3, 0, 1) // player castle
+			CreateCastle(-3, -3, 1, 1) // enemy castle
+			CreateCastle(1, -1)
+			CreateCastle(-1, 1)
+			findNeibghors(6)
+			enemy.enable = false
+			break;
+		default:
+		case 1:
+			CreateCastle(0, 6, 0, 2) // player castle
+			CreateCastle(0, -6, 1, 2) // enemy castle
+			for(var i = -1; i < 2; i++) {
+				for(var j = -1; j < 2; j++) {
+					CreateCastle(i * 3, j * 3)
+				}
+			}
+			findNeibghors(6)
+			break;
+		case 2:
+			CreateCastle(3, 3, 0, 1) // player castle
+			CreateCastle(-3, -3, 1, 1) // enemy castle
+			CreateCastle(0, 0)
+			CreateCastle(-3, 0)
+			CreateCastle(3, 0)
+			CreateCastle(0, -3)
+			CreateCastle(0, 3)
+			findNeibghors(6)
+			break;
+	}
+}const castleSize = 3;
 const troopSendDelay = 0.3;
 var castles = []
 var selectedCastle = null;
@@ -1382,11 +1396,18 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 				height = 0
 			}
 			SetSelectionBorder(castleTiles, 39 + this.coord[0] * 5, 39 + this.coord[1] * 5, 7, color, height)
+		},
+		kill() {
+			// kill
+			removeItem(gameObjects, castle)
+			removeItem(objects3d, castle)
+			removeItem(castles, castle)
 		}
 	}
 	gameObjects.push(castle)
 	objects3d.push(castle)
 	castles.push(castle)
+
 	castle.rebuild()
 	return castle;
 }
@@ -1395,6 +1416,17 @@ function updateSelection() {
 	castles.forEach(c => c.setSelected(c == selectedCastle));
 	castleTiles.rebuild()
 }
+
+
+function removeCastles() {
+	for(i = 0; i < castles.length; i++)
+	{
+		removeItem(gameObjects, castles[i])
+		removeItem(objects3d, castles[i])
+	}
+	castles = []
+}
+
 function getFactionColorVector3(factionId) {
 	switch (factionId) {
 		case 0: return CreateVector3(0.2, 0.2, 1.0); // player
@@ -1460,7 +1492,10 @@ const
 	unitHeight = 5,
 	unitSize = 1,
 	unitSpeed = 1,
-	zeroVector = [0, 0];
+	zeroVector = [0, 0]
+
+var
+	units = []
 
 function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 	var unit = {
@@ -1529,16 +1564,25 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 					unit.target.attack(unit.faction)
 					// kill
 					removeItem(gameObjects, unit)
-					// removeItem(drawObjects, unit)
 					removeItem(objects3d, unit)
+					removeItem(units, unit)
 				}
 			}
-		},
+		}
 	}
 	gameObjects.push(unit)
 	objects3d.push(unit)
-	// drawObjects.push(unit)
+	units.push(unit)
 	return unit;
+}
+
+function removeUnits() {
+	for(i = 0; i < units.length; i++)
+	{
+		removeItem(gameObjects, units[i])
+		removeItem(objects3d, units[i])
+	}
+	units = []
 }
 
 function removeItem(array, item) {
@@ -1549,7 +1593,7 @@ function removeItem(array, item) {
 }
 
 
-function CreateEnemy(castles, factionId = 1, dummyDelay = 1) {
+function CreateEnemy(factionId = 1, dummyDelay = 1) {
 	const updateDelay = 0.5
 	let enemy = {
 		enable: true,
@@ -1557,6 +1601,9 @@ function CreateEnemy(castles, factionId = 1, dummyDelay = 1) {
 		timer: updateDelay,
 		threshold: 20,
 		update(dt) {
+			if (!this.enable) {
+				return
+			}
 			this.timer -= dt
 			if (this.timer < 0) {
 				this.timer = updateDelay + Math.random() * dummyDelay
@@ -1625,57 +1672,161 @@ var now,
 	currentMatrix = CreateUnitMatrix3(),
 	angle = 0
 
-UpdateCanvasSize()
+updateCanvasSize()
 
 // init
 let rect = canvasElement.getBoundingClientRect();
 
 var gameObjects = [];
-var drawObjects = [];
-CreateCastle(-6, 0, 0, 2)
-CreateCastle(6, 0, 1, 2)
-for(var i = -1; i < 2; i++) {
-	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 3, j * 3)
-	}
-}
-findNeibghors(6)
 
-var input = CreateInput(rect)
+var
+	input = CreateInput(rect),
+	enemy = CreateEnemy(),
+	currentLevel = 0
 gameObjects.push(input)
 
-CreateEnemy(castles)
-
-function timestamp() {
-	let perf = window.performance;
-	return perf && perf.now ? perf.now() : new Date().getTime();
-}
-
+var stateFunction = updateGame
+setState(0)
+setFontSize()
 
 function render() {
 	// clear
 	canvas.fillStyle    = '#101010';  // black
 	canvas.fillRect ( 0, 0, width, height);
-
-	// map
-	// drawMap()
 	// camera
 	DrawCamera()
-
-	canvas.fillStyle    = '#333333';  // black
-	canvas.strokeStyle    = '#101010';  // black
-
-	// castles
-	drawObjects.forEach(g => g.draw(canvas))
-
-	// help
-	// canvas.font = "14pt Arial";
-	// canvas.fillText("Q / E - Rotate level", 10, 30)
-	// canvas.fillText("Z / X - change height constant", 10, 50)
-	// canvas.fillText("dt " + dt, 10, 30)
 }
 
-function update(dt) {
+function setState(state){
+	// menu
+	if (state == 0) {
+		CreateLevel(0)
+		stateFunction = updateMenu
+		return
+	}
+	// select level
+	if (state == -1) {
+		CreateLevel(currentLevel)
+		stateFunction = updateLevel
+		return
+	}
+	// win
+	if (state == -2) {
+		stateFunction = updateWin
+		return
+	}
+	// lose
+	if (state == -3) {
+		stateFunction = updateLose
+		return
+	}
+	// start game
+	if (state == 1) {
+		stateFunction = updateGame
+		return
+	}
+}
+
+function updateWin(dt) {
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#66FF66';  // green
+	setFontSize(60)
+	fillTextScreen("WIN", 0, -35)
+	setFontSize()
+
+	if (button("MENU", 0, 0, 18, 6)) {
+		setState(0)
+	}
+	if (button("NEXT", 0, 20, 18, 6)) {
+		currentLevel += 1
+		setState(-1)
+	}
+	if (input.key[27]) { // esc
+		setState(0)
+	}
+}
+
+function updateLose(dt) {
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#FF6666';  // green
+	setFontSize(60)
+	fillTextScreen("LOSE", 0, -35)
+	setFontSize()
+
+	if (button("MENU", 0, 0, 18, 6)) {
+		setState(0)
+	}
+	if (button("RESTART", 0, 20, 18, 6)) {
+		setState(-1)
+	}
+	if (input.key[27]) { // esc
+		setState(0)
+	}
+}
+
+function updateMenu(dt) {
+	// gameObjects.forEach(g => g.update(dt));
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#FFFFFF';  // dark gray
+	setFontSize(60)
+	fillTextScreen("CASTLE WARS", 0, -35)
+	setFontSize()
+
+	if (button("START", 0, 20, 18, 6)) {
+		setState(-1)
+	}
+	if (input.key[32]) { // space
+		setState(-1)
+	}
+}
+
+function updateLevel(dt) {
+	// gameObjects.forEach(g => g.update(dt));
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#FFFFFF';
+	setFontSize(40)
+	fillTextScreen("SELECT LEVEL", 0, -35)
+	
+	if (currentLevel > 0) {
+		fillTextScreen(currentLevel, 0, -25)
+	}
+	setFontSize()
+
+	if (button("START", 0, 20, 18, 6)) {
+		setState(1)
+	}
+	if (input.key[32]) { // space
+		setState(1)
+	}
+	if (input.key[27]) { // esc
+		setState(0)
+	}
+	if (button(">>", 16, 20, 9, 6) || input.key[39]) { // right
+		currentLevel += 1
+		CreateLevel(currentLevel)
+	}
+	if (currentLevel > 0 && button("<<", -16, 20, 9, 6) || input.key[37]) { // left
+		currentLevel -= 1
+		CreateLevel(currentLevel)
+	}
+}
+
+function updateGame(dt) {
+	if (input.key[27]) { // esc
+		setState(0)
+	}
 	if (input.mouseLeftDown) {
 		selectedCastle = getCastle(input.mousePosition)
 		findAvailableForMoveCastles(selectedCastle)
@@ -1692,15 +1843,34 @@ function update(dt) {
 			}
 		}
 	}
-    if (input.key[32]) { // space
-		console.log(objects3d)
-    }
+	// check win conditions
+	let
+		playerCount = 0,
+		enemyCount = 0
+	castles.forEach(c => {
+		if (c.factionId == 0) {
+			playerCount += 1
+		}
+		if (c.factionId == 1) {
+			enemyCount += 1
+		}
+	});
+	if (playerCount == 0) {
+		setState(-3) // lose
+	}
+	if (enemyCount == 0) {
+		setState(-2) // win
+	}
+
+	// update objects
 	gameObjects.forEach(g => g.update(dt));
 	// rotate camera
     // angle += 20 * dt
 	// SetCameraAngle(angle)
 	angle += 0.1 * dt
-	SetCameraAngle(Sin(angle) * 10 + 45)
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
 }
 
 let animationFrameFunction = requestAnimationFrame
@@ -1712,17 +1882,21 @@ function frame() {
 		dt = step;
 	}
 	time = now;
-	update(dt);
-	render();
+	stateFunction(dt);
 	animationFrameFunction(frame);
 	// update canvas on window change
 	if (width != docElement.clientWidth || height != docElement.clientHeight) {
-		UpdateCanvasSize()
+		updateCanvasSize()
 	}
 }
 animationFrameFunction(frame);
 
-function UpdateCanvasSize() {
+function timestamp() {
+	let perf = window.performance;
+	return perf && perf.now ? perf.now() : new Date().getTime();
+}
+
+function updateCanvasSize() {
 	width = docElement.clientWidth
 	height = docElement.clientHeight
 	minSize = Math.min(width, height)
@@ -1734,13 +1908,14 @@ function UpdateCanvasSize() {
 	canvasElement.width = width
 	canvasElement.height = height
 
-	let fontSize = 24.0
+	SetCameraSize(width, height)
+}
+
+function setFontSize(fontSize = 24.0){
 	if (height > width) {
 		fontSize *= height / width
 	}
 	canvas.font = parseInt(fontSize) + "pt Arial"
-
-	SetCameraSize(width, height)
 }
 
 function fillText(text, x, y) {
@@ -1751,10 +1926,33 @@ function fillRect(x, y, w, h) {
 	canvas.fillRect (x, y, w, h)
 }
 
-function fillRectScreen(x, y, w, h) {
-	canvas.fillRect (x * screenScale + centerX, y * screenScale + centerY, w * screenScale, h * screenScale)
+function fillTextScreen(text, x, y) {
+    canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
 }
 
-function fillTextScreen(text, x, y) {
-	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
+function button(text, x, y, w, h) {
+	let
+		sizeX = (w * screenScale) * 0.5,
+		sizeY = (h * screenScale) * 0.5,
+		rectX = x * screenScale + centerX,
+		rectY = y * screenScale + centerY
+
+	canvas.fillStyle    = '#66666699';  // gray transparent
+	canvas.fillRect(rectX - sizeX, rectY - sizeY - 12, sizeX * 2, sizeY * 2)
+	canvas.fillStyle    = '#FFFFFF';  // white
+    canvas.fillText(text, rectX, rectY);
+	if (input.mouseLeftDown) {
+		let pos = input.mousePosition
+		var contains = (
+			rectX - sizeX < pos[0] && 
+			rectY - sizeY < pos[1] && 
+			rectX + sizeX > pos[0] && 
+			rectY + sizeY > pos[1]
+		)
+		if (contains) {
+			input.update(1)
+			return true
+		}
+	}
+	return false
 }
