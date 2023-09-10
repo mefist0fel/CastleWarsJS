@@ -3,7 +3,8 @@ let
 	halfMapSize = 17,
 	mapScale = 60,
 	halfMapScale = 30,
-	CreateArray = Array
+	CreateArray = Array,
+	maps = []
 
 const tileOffsets = [
 	CreateVector3(-1, 1),
@@ -18,6 +19,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 	let pointsLen = mapSize * 4;
 	let map = {
 		heightMap: CreateArray(mapSize * mapSize),
+		heightMapCache: CreateArray(mapSize * mapSize),
 		points: CreateArray(mapSize * mapSize * 4),
 		colors: CreateArray(mapSize * mapSize),
 		tiles: CreateArray(mapSize * mapSize),
@@ -25,16 +27,41 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 		tilesLeft: CreateArray(mapSize * mapSize),
 		size: mapSize,
 		setHeight(x, y, height) {
-			SetElementSafe(this.heightMap, x, y, this.size, height)
+			SetElementSafe(this.heightMapCache, x, y, this.size, height)
 		},
 		getHeight(x, y) {
-			return GetElementSafe(this.heightMap, x, y, this.size, 0)
+			return GetElementSafe(this.heightMapCache, x, y, this.size, 0)
 		},
 		setColor(x, y, color) {
 			SetElementSafe(this.colors, x, y, this.size, color)
 		},
 		getColor(x, y) {
 			return GetElementSafe(this.colors, x, y, this.size, CreateVector3())
+		},
+		update(dt) {
+			const conversionTime = 100;
+			let needRebuild = false
+			for(var i = 0; i < this.heightMapCache.length; i++)
+			{
+				if (this.heightMap[i] != this.heightMapCache[i]) {
+					var needValue = this.heightMapCache[i]
+					var value = this.heightMap[i]
+					if (value > needValue) {
+						value -= conversionTime * dt
+						if (value < needValue) {
+							value = needValue
+						}
+					} else {
+						value += conversionTime * dt
+						if (value > needValue) {
+							value = needValue
+						}
+					}
+					needRebuild = true
+					this.heightMap[i] = value
+				}
+			}
+			this.rebuild()
 		},
 		rebuild() {
 			for(var i = 0; i < this.size; i++)
@@ -107,7 +134,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 				for(j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
-					this.heightMap[index] = defaultHeight
+					this.heightMapCache[index] = defaultHeight
 				}
 			}
 			this.rebuild()
@@ -124,6 +151,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 		{
 			let index = GetMapIndex(i, j, map.size)
 			map.heightMap[index] = defaultHeight
+			map.heightMapCache[index] = defaultHeight
 			let color = CreateVector3(1, 1, 1)
 			map.tiles[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
 			map.tilesTop[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
@@ -132,6 +160,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 		}
 	}
 	map.rebuild()
+	maps.push(map)
 	return map
 	
 	function SetElementSafe(list, x, y, size, value) {

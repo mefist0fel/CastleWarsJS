@@ -1,7 +1,9 @@
 const castleSize = 3;
 const troopSendDelay = 0.3;
-var castles = []
-var selectedCastle = null;
+var
+	castles = [],
+	selectedCastle = null
+
 
 function CreateCastle(x, y, factionId = -1, level=0) {
 	const

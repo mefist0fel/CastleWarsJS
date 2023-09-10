@@ -16,7 +16,6 @@ var now,
 	centerY = 1, // 768 * 0.5
 	screenScale = 1, // find size of 1/10 cell
 	docElement = doc.documentElement,
-	currentMatrix = CreateUnitMatrix3(),
 	angle = 0
 
 updateCanvasSize()
@@ -24,16 +23,12 @@ updateCanvasSize()
 // init
 let rect = canvasElement.getBoundingClientRect();
 
-var gameObjects = [];
-
 var
 	input = CreateInput(rect),
+	gameObjects = [],
 	enemy = CreateEnemy(),
-	currentLevel = 0
-gameObjects.push(input)
-
-var
-	stateFunction
+	currentLevel = 0,
+	stateFunction = null
 
 setState(0)
 setFontSize()
@@ -77,6 +72,7 @@ function setState(state){
 }
 
 function updateWin(dt) {
+	maps.forEach(m => m.update(dt));
 	angle += 0.1 * dt
 	SetCameraAngle(Sin(angle) * 10 + 65)
 	// render
@@ -99,6 +95,7 @@ function updateWin(dt) {
 }
 
 function updateLose(dt) {
+	maps.forEach(m => m.update(dt));
 	angle += 0.1 * dt
 	SetCameraAngle(Sin(angle) * 10 + 65)
 	// render
@@ -120,7 +117,7 @@ function updateLose(dt) {
 }
 
 function updateMenu(dt) {
-	// gameObjects.forEach(g => g.update(dt));
+	maps.forEach(m => m.update(dt));
 	angle += 0.1 * dt
 	SetCameraAngle(Sin(angle) * 10 + 65)
 	// render
@@ -139,7 +136,7 @@ function updateMenu(dt) {
 }
 
 function updateLevel(dt) {
-	// gameObjects.forEach(g => g.update(dt));
+	maps.forEach(m => m.update(dt));
 	angle += 0.1 * dt
 	SetCameraAngle(Sin(angle) * 10 + 65)
 	// render
@@ -173,6 +170,7 @@ function updateLevel(dt) {
 }
 
 function updateGame(dt) {
+	maps.forEach(m => m.update(dt));
 	if (input.key[27]) { // esc
 		setState(0)
 	}
@@ -238,6 +236,7 @@ function frame() {
 	time = now;
 	stateFunction(dt);
 	animationFrameFunction(frame);
+	input.update()
 	// update canvas on window change
 	if (width != docElement.clientWidth || height != docElement.clientHeight) {
 		updateCanvasSize()
