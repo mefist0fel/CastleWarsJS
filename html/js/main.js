@@ -32,7 +32,9 @@ var
 	currentLevel = 0
 gameObjects.push(input)
 
-var stateFunction = updateGame
+var
+	stateFunction
+
 setState(0)
 setFontSize()
 
