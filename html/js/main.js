@@ -25,20 +25,16 @@ updateCanvasSize()
 let rect = canvasElement.getBoundingClientRect();
 
 var gameObjects = [];
-CreateCastle(-6, 0, 0, 2)
-CreateCastle(6, 0, 1, 2)
-for(var i = -1; i < 2; i++) {
-	for(var j = -1; j < 2; j++) {
-		CreateCastle(i * 3, j * 3)
-	}
-}
-findNeibghors(6)
 
-var input = CreateInput(rect)
+var
+	input = CreateInput(rect),
+	enemy = CreateEnemy(),
+	currentLevel = 0
 gameObjects.push(input)
 
-CreateEnemy(castles)
-var stateFunction = update
+var stateFunction = updateGame
+setState(0)
+setFontSize()
 
 function render() {
 	// clear
@@ -48,7 +44,136 @@ function render() {
 	DrawCamera()
 }
 
-function update(dt) {
+function setState(state){
+	// menu
+	if (state == 0) {
+		CreateLevel(0)
+		stateFunction = updateMenu
+		return
+	}
+	// select level
+	if (state == -1) {
+		CreateLevel(currentLevel)
+		stateFunction = updateLevel
+		return
+	}
+	// win
+	if (state == -2) {
+		stateFunction = updateWin
+		return
+	}
+	// lose
+	if (state == -3) {
+		stateFunction = updateLose
+		return
+	}
+	// start game
+	if (state == 1) {
+		stateFunction = updateGame
+		return
+	}
+}
+
+function updateWin(dt) {
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#66FF66';  // green
+	setFontSize(60)
+	fillTextScreen("WIN", 0, -35)
+	setFontSize()
+
+	if (button("MENU", 0, 0, 18, 6)) {
+		setState(0)
+	}
+	if (button("NEXT", 0, 20, 18, 6)) {
+		currentLevel += 1
+		setState(-1)
+	}
+	if (input.key[27]) { // esc
+		setState(0)
+	}
+}
+
+function updateLose(dt) {
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#FF6666';  // green
+	setFontSize(60)
+	fillTextScreen("LOSE", 0, -35)
+	setFontSize()
+
+	if (button("MENU", 0, 0, 18, 6)) {
+		setState(0)
+	}
+	if (button("RESTART", 0, 20, 18, 6)) {
+		setState(-1)
+	}
+	if (input.key[27]) { // esc
+		setState(0)
+	}
+}
+
+function updateMenu(dt) {
+	// gameObjects.forEach(g => g.update(dt));
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#FFFFFF';  // dark gray
+	setFontSize(60)
+	fillTextScreen("CASTLE WARS", 0, -35)
+	setFontSize()
+
+	if (button("START", 0, 20, 18, 6)) {
+		setState(-1)
+	}
+	if (input.key[32]) { // space
+		setState(-1)
+	}
+}
+
+function updateLevel(dt) {
+	// gameObjects.forEach(g => g.update(dt));
+	angle += 0.1 * dt
+	SetCameraAngle(Sin(angle) * 10 + 65)
+	// render
+	render()
+	canvas.fillStyle    = '#FFFFFF';
+	setFontSize(40)
+	fillTextScreen("SELECT LEVEL", 0, -35)
+	
+	if (currentLevel > 0) {
+		fillTextScreen(currentLevel, 0, 0)
+	}
+	setFontSize()
+
+	if (button("START", 0, 20, 18, 6)) {
+		setState(1)
+	}
+	if (input.key[32]) { // space
+		setState(1)
+	}
+	if (input.key[27]) { // esc
+		setState(0)
+	}
+	if (button(">>", 16, 20, 9, 6) || input.key[39]) { // right
+		currentLevel += 1
+		CreateLevel(currentLevel)
+	}
+	if (currentLevel > 0 && button("<<", -16, 20, 9, 6) || input.key[37]) { // left
+		currentLevel -= 1
+		CreateLevel(currentLevel)
+	}
+}
+
+function updateGame(dt) {
+	if (input.key[27]) { // esc
+		setState(0)
+	}
 	if (input.mouseLeftDown) {
 		selectedCastle = getCastle(input.mousePosition)
 		findAvailableForMoveCastles(selectedCastle)
@@ -65,15 +190,32 @@ function update(dt) {
 			}
 		}
 	}
-    if (input.key[32]) { // space
-		console.log(objects3d)
-    }
+	// check win conditions
+	let
+		playerCount = 0,
+		enemyCount = 0
+	castles.forEach(c => {
+		if (c.factionId == 0) {
+			playerCount += 1
+		}
+		if (c.factionId == 1) {
+			enemyCount += 1
+		}
+	});
+	if (playerCount == 0) {
+		setState(-3) // lose
+	}
+	if (enemyCount == 0) {
+		setState(-2) // win
+	}
+
+	// update objects
 	gameObjects.forEach(g => g.update(dt));
 	// rotate camera
     // angle += 20 * dt
 	// SetCameraAngle(angle)
 	angle += 0.1 * dt
-	SetCameraAngle(Sin(angle) * 10 + 45)
+	SetCameraAngle(Sin(angle) * 10 + 65)
 	// render
 	render()
 }
@@ -113,13 +255,14 @@ function updateCanvasSize() {
 	canvasElement.width = width
 	canvasElement.height = height
 
-	let fontSize = 24.0
+	SetCameraSize(width, height)
+}
+
+function setFontSize(fontSize = 24.0){
 	if (height > width) {
 		fontSize *= height / width
 	}
 	canvas.font = parseInt(fontSize) + "pt Arial"
-
-	SetCameraSize(width, height)
 }
 
 function fillText(text, x, y) {
@@ -128,4 +271,35 @@ function fillText(text, x, y) {
 
 function fillRect(x, y, w, h) {
 	canvas.fillRect (x, y, w, h)
+}
+
+function fillTextScreen(text, x, y) {
+    canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
+}
+
+function button(text, x, y, w, h) {
+	let
+		sizeX = (w * screenScale) * 0.5,
+		sizeY = (h * screenScale) * 0.5,
+		rectX = x * screenScale + centerX,
+		rectY = y * screenScale + centerY
+
+	canvas.fillStyle    = '#66666699';  // gray transparent
+	canvas.fillRect(rectX - sizeX, rectY - sizeY - 12, sizeX * 2, sizeY * 2)
+	canvas.fillStyle    = '#FFFFFF';  // white
+    canvas.fillText(text, rectX, rectY);
+	if (input.mouseLeftDown) {
+		let pos = input.mousePosition
+		var contains = (
+			rectX - sizeX < pos[0] && 
+			rectY - sizeY < pos[1] && 
+			rectX + sizeX > pos[0] && 
+			rectY + sizeY > pos[1]
+		)
+		if (contains) {
+			input.update(1)
+			return true
+		}
+	}
+	return false
 }

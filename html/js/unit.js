@@ -2,7 +2,10 @@ const
 	unitHeight = 5,
 	unitSize = 1,
 	unitSpeed = 1,
-	zeroVector = [0, 0];
+	zeroVector = [0, 0]
+
+var
+	units = []
 
 function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 	var unit = {
@@ -71,16 +74,25 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 					unit.target.attack(unit.faction)
 					// kill
 					removeItem(gameObjects, unit)
-					// removeItem(drawObjects, unit)
 					removeItem(objects3d, unit)
+					removeItem(units, unit)
 				}
 			}
-		},
+		}
 	}
 	gameObjects.push(unit)
 	objects3d.push(unit)
-	// drawObjects.push(unit)
+	units.push(unit)
 	return unit;
+}
+
+function removeUnits() {
+	for(i = 0; i < units.length; i++)
+	{
+		removeItem(gameObjects, units[i])
+		removeItem(objects3d, units[i])
+	}
+	units = []
 }
 
 function removeItem(array, item) {

@@ -160,11 +160,18 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 				height = 0
 			}
 			SetSelectionBorder(castleTiles, 39 + this.coord[0] * 5, 39 + this.coord[1] * 5, 7, color, height)
+		},
+		kill() {
+			// kill
+			removeItem(gameObjects, castle)
+			removeItem(objects3d, castle)
+			removeItem(castles, castle)
 		}
 	}
 	gameObjects.push(castle)
 	objects3d.push(castle)
 	castles.push(castle)
+
 	castle.rebuild()
 	return castle;
 }
@@ -173,6 +180,17 @@ function updateSelection() {
 	castles.forEach(c => c.setSelected(c == selectedCastle));
 	castleTiles.rebuild()
 }
+
+
+function removeCastles() {
+	for(i = 0; i < castles.length; i++)
+	{
+		removeItem(gameObjects, castles[i])
+		removeItem(objects3d, castles[i])
+	}
+	castles = []
+}
+
 function getFactionColorVector3(factionId) {
 	switch (factionId) {
 		case 0: return CreateVector3(0.2, 0.2, 1.0); // player

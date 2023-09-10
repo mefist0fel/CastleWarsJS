@@ -1,6 +1,6 @@
 
 
-function CreateEnemy(castles, factionId = 1, dummyDelay = 1) {
+function CreateEnemy(factionId = 1, dummyDelay = 1) {
 	const updateDelay = 0.5
 	let enemy = {
 		enable: true,
@@ -8,6 +8,9 @@ function CreateEnemy(castles, factionId = 1, dummyDelay = 1) {
 		timer: updateDelay,
 		threshold: 20,
 		update(dt) {
+			if (!this.enable) {
+				return
+			}
 			this.timer -= dt
 			if (this.timer < 0) {
 				this.timer = updateDelay + Math.random() * dummyDelay

@@ -100,6 +100,17 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 					}
 				}
 			}
+		},
+		clear() {
+			for(i = 0; i < this.size; i++)
+			{
+				for(j = 0; j < this.size; j++)
+				{
+					let index = GetMapIndex(i, j, this.size)
+					this.heightMap[index] = defaultHeight
+				}
+			}
+			this.rebuild()
 		}
 	}
 
@@ -208,36 +219,40 @@ for(i = 0; i < mapSize; i++)
 }
 map.rebuild()
 
-// const
-// 	_ = -0.000001
-// // castle
-// var small = [
-// 	_, _, _, _, _,
-// 	_, 4, 2, 4, _,
-// 	_, 2, 0, 2, _,
-// 	_, 4, 2, 4, _,
-// 	_, _, _, _, _
-// ]
-// // castle
-// var medium = [
-// 	_, 4, 2, 4, _,
-// 	4, 2, 2, 2, 4,
-// 	2, 2, 5, 2, 2,
-// 	4, 2, 2, 2, 4,
-// 	_, 4, 2, 4, _
-// ]
-// // castle
-// var big = [
-// 	4, 2, 3, 2, 4,
-// 	2, 7, 5, 7, 2,
-// 	3, 5, 3, 5, 3,
-// 	2, 7, 5, 7, 2,
-// 	4, 2, 3, 2, 4
-// ]
-
-// ApplyCastleHeight(castleTiles, 15, 15, big, 5, 6);
-// ApplyCastleHeight(castleTiles, 35, 15, small, 5, 6);
-// ApplyCastleHeight(castleTiles, 45, 5, small, 5, 6);
-// ApplyCastleHeight(castleTiles, 15, 35, small, 5, 6);
-// ApplyCastleHeight(castleTiles, 35, 35, medium, 5, 6);
-// castleTiles.rebuild()
+function CreateLevel(id) {
+	removeUnits()
+	removeCastles()
+	castleTiles.clear()
+	enemy.enable = true
+	switch (id) {
+		case 0:
+			CreateCastle(3, 3, 0, 1) // player castle
+			CreateCastle(-3, -3, 1, 1) // enemy castle
+			CreateCastle(1, -1)
+			CreateCastle(-1, 1)
+			findNeibghors(6)
+			enemy.enable = false
+			break;
+		default:
+		case 1:
+			CreateCastle(-6, 0, 0, 2) // player castle
+			CreateCastle(6, 0, 1, 2) // enemy castle
+			for(var i = -1; i < 2; i++) {
+				for(var j = -1; j < 2; j++) {
+					CreateCastle(i * 3, j * 3)
+				}
+			}
+			findNeibghors(6)
+			break;
+		case 2:
+			CreateCastle(3, 3, 0, 1) // player castle
+			CreateCastle(-3, -3, 1, 1) // enemy castle
+			CreateCastle(0, 0)
+			CreateCastle(-3, 0)
+			CreateCastle(3, 0)
+			CreateCastle(0, -3)
+			CreateCastle(0, 3)
+			findNeibghors(6)
+			break;
+	}
+}
