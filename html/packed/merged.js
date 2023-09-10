@@ -241,7 +241,7 @@ function MultiplyMatrix4(ma, mb) {
 		ma[12] * mb[ 2] + ma[13] * mb[ 6] + ma[14] * mb[10]  + ma[15] * mb[14],
 		ma[12] * mb[ 3] + ma[13] * mb[ 7] + ma[14] * mb[11]  + ma[15] * mb[15]
 	]
-}function Input(rect) {
+}function CreateInput(rect) {
 	//  KEY KODES
 	//	BACKSPACE: 8,
 	//	TAB:       9,	RETURN:   13,
@@ -1228,9 +1228,9 @@ var selectedCastle = null;
 function CreateCastle(x, y, factionId = -1, level=0) {
 	const
 		_ = -0.0001,
-		sizes = [1, 2, 3],
 		spawn = [1, 2, 3],
 		upgradeCost = [15, 20, 999],
+		max = [50, 80, 100],
 		whiteColor = CreateVector3(1, 1, 1),
 		grayColor = CreateVector3(0.5, 0.5, 0.5),
 		heightMap = [
@@ -1266,13 +1266,12 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		screenPosition: CreateVector3(),
 		screenTopPosition: CreateVector3(),
 		screenSize: [10, 10],
-		faction: factionId,
+		factionId: factionId,
 		attackCount: 0,
 		pathToTarget: null,
 		target: null,
 		level: level,
 		lives: 10,
-		max: 100,
 		reloadTime: 1,
 		sendTroopTime: 0,
 		neibghors: [],
@@ -1288,7 +1287,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
         },
 		draw() {
 			// Draw
-			canvas.fillStyle = Vector3ToColor(getFactionColorVector3(castle.faction))
+			canvas.fillStyle = Vector3ToColor(getFactionColorVector3(castle.factionId))
 			canvas.textAlign = 'center'
 			fillText(castle.lives, castle.screenTopPosition[0], castle.screenTopPosition[1])
 			// upgrade marker
@@ -1308,7 +1307,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			this.reloadTime -= dt
 			if (this.reloadTime <= 0) {
 				this.reloadTime = reloadTime
-				if (this.faction >= 0 && castle.lives < castle.max) {
+				if (this.factionId >= 0 && castle.lives < max[castle.level]) {
 					this.lives += spawn[this.level]
 				}
 			}
@@ -1320,7 +1319,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 					while (unitsToSend > 0 && this.attackCount > 0 && this.lives > 0) {
 						this.lives -= 1
 						this.attackCount -= 1
-						CreateUnit(this.coord[0], this.coord[1], this.faction, this.pathToTarget, (unitsToSend - 2))
+						CreateUnit(this.coord[0], this.coord[1], this.factionId, this.pathToTarget, (unitsToSend - 2))
 						unitsToSend -= 1
 					}
 					this.sendTroopTime += troopSendDelay
@@ -1339,11 +1338,11 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 			)
 		},
 		attack(factionId) {
-			if (this.faction == factionId) {
+			if (this.factionId == factionId) {
 				this.lives += 1
 			} else {
 				if (this.lives <= 0) {
-					this.faction = factionId
+					this.factionId = factionId
 					// update color
 					this.rebuild()
 					this.lives = 1
@@ -1368,7 +1367,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		},
 		rebuild() {
 			ApplyCastleHeight(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, heightMap[this.level], 5, 6);
-			ApplyCastleColor(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, 5, getFactionColorVector3(this.faction))
+			ApplyCastleColor(castleTiles, 40 + this.coord[0] * 5, 40 + this.coord[1] * 5, 5, getFactionColorVector3(this.factionId))
 			castleTiles.rebuild()
 		},
 		setSelected(isSelected) {
@@ -1386,7 +1385,6 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		}
 	}
 	gameObjects.push(castle)
-	//drawObjects.push(castle)
 	objects3d.push(castle)
 	castles.push(castle)
 	castle.rebuild()
@@ -1451,7 +1449,7 @@ function findAvailableForMoveCastles(startCastle) {
 				if (nCastle.distance > distanceFromStart) {
 					nCastle.distance = distanceFromStart
 					nCastle.pathCastle = castle
-					if (nCastle.faction == startCastle.faction) {
+					if (nCastle.factionId == startCastle.factionId) {
 						openList.push(nCastle)
 					}
 				}
@@ -1549,6 +1547,63 @@ function removeItem(array, item) {
 		array.splice(index, 1);
 	}
 }
+
+
+function CreateEnemy(castles, factionId = 1, dummyDelay = 1) {
+	const updateDelay = 0.5
+	let enemy = {
+		enable: true,
+		factionId: factionId,
+		timer: updateDelay,
+		threshold: 20,
+		update(dt) {
+			this.timer -= dt
+			if (this.timer < 0) {
+				this.timer = updateDelay + Math.random() * dummyDelay
+				castles.forEach(
+					castle => {
+						if (castle.factionId == this.factionId) {
+							if (castle.lives > this.threshold) {
+								// can try to upgrade castle
+								if (castle.level > 3) {
+									this.attackSomebody(castle)
+								}
+								if (Math.random() < 0.3) {
+									castle.upgrade()
+								} else {
+									this.attackSomebody(castle)
+								}
+							}
+							this.threshold = 20 + Math.random(15)
+						}
+					})
+			}
+		},
+		attackSomebody(fromCastle) {
+			findAvailableForMoveCastles(fromCastle)
+			let castlesToAttack = []
+			// attack enemy castles first
+			castles.forEach(castle => {
+				if (castle != fromCastle && castle.pathCastle != null && castle.factionId != this.factionId) {
+					castlesToAttack.push(castle)
+				}
+			})
+			// your castle
+			if (castlesToAttack.length == 0) {
+				castles.forEach(castle => {
+					if (castle != fromCastle && castle.pathCastle != null && castle.factionId == this.factionId) {
+						castlesToAttack.push(castle)
+					}
+				})
+			}
+			if (castlesToAttack.length > 0) {
+				fromCastle.sendArmy(castlesToAttack[Math.floor(Math.random()*castlesToAttack.length)])
+			}
+		}
+	}
+	gameObjects.push(enemy)
+	return enemy
+}
 				
 const reloadTime = 1.0;
 const playerFaction = 0;
@@ -1586,8 +1641,10 @@ for(var i = -1; i < 2; i++) {
 }
 findNeibghors(6)
 
-var input = Input(rect)
+var input = CreateInput(rect)
 gameObjects.push(input)
+
+CreateEnemy(castles)
 
 function timestamp() {
 	let perf = window.performance;
@@ -1630,6 +1687,7 @@ function update(dt) {
 			if (selectedCastle == target) {
 				selectedCastle.upgrade()
 			} else {
+				findAvailableForMoveCastles(selectedCastle)
 				selectedCastle.sendArmy(target)
 			}
 		}
