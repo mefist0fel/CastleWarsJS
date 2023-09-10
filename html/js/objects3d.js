@@ -20,7 +20,7 @@ function SetCameraAngle(angle) {
     // Set iso axes
     let
         isoFactor = 0.6,
-        radX = angle / 180.0 * PI
+        radX = angle / 180.0 * PI,
         radY = (angle / 180.0  + 0.5) * PI
     axeX = CreateVector3(Cos(radX), Sin(radX) * isoFactor, Sin(radX)),
     axeY = CreateVector3(Cos(radY), Sin(radY) * isoFactor, Sin(radY)),
@@ -46,7 +46,7 @@ function Object3DDepthComparator (objectA, objectB) {
 }
 
 function WorldToScreenVector3 (point) {
-    worldPoint = AddVector3(point, MultiplyVector3(cameraPosition, -1.0))
+    let worldPoint = AddVector3(point, MultiplyVector3(cameraPosition, -1.0))
     // worldPoint = MultiplyVector3ToMatrix3(worldPoint, cameraWorldMatrix)
     worldPoint = AddVector3(AddVector3(MultiplyVector3(axeX, worldPoint[0]),MultiplyVector3(axeY, worldPoint[1])), MultiplyVector3(axeZ, worldPoint[2]))
     worldPoint = AddVector3(worldPoint, cameraOffset)

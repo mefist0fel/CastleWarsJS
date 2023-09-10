@@ -131,9 +131,9 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 			}
 		},
 		clear() {
-			for(i = 0; i < this.size; i++)
+			for(var i = 0; i < this.size; i++)
 			{
-				for(j = 0; j < this.size; j++)
+				for(var j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
 					this.heightMapCache[index] = defaultHeight
@@ -147,9 +147,9 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 		mapHalfSize = (mapSize - 1) * 0.5,
 		mapHalfScale = scale * 0.5
 
-	for(i = 0; i < map.size; i++)
+	for(var i = 0; i < map.size; i++)
 	{
-		for(j = 0; j < map.size; j++)
+		for(var j = 0; j < map.size; j++)
 		{
 			let index = GetMapIndex(i, j, map.size)
 			map.heightMap[index] = defaultHeight
@@ -246,9 +246,9 @@ const mapOffsets = [
 var castleTiles = CreateCellMap(85, 10, -0.00001, -50)
 var map = CreateCellMap(mapSize, 50, 50)
 
-for(i = 0; i < mapSize; i++)
+for(var i = 0; i < mapSize; i++)
 {
-	for(j = 0; j < mapSize; j++)
+	for(var j = 0; j < mapSize; j++)
 	{
 		let height = Math.random() * 80
 

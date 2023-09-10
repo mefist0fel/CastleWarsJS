@@ -1,26 +1,3 @@
-<html>
-	<head>
-		<title>Castles</title>
-		<style type="text/css">
-		body {
-			display: block;
-			background-color:0;
-			width: 100%;
-			height: 100%;
-			margin: 0;
-		}
-		canvas {
-			background-color:0;
-			display: block;
-			margin: 0px auto;
-		}
-		</style>
-	</head>
-	<body>
-		<canvas id="a"></canvas>
-	</body>
-	<script type="text/javascript">
-
 const aa=Number.MAX_VALUE,ca=Number.MIN_VALUE,da=Math.PI,ea=Math.cos,fa=Math.sin,ha=Math.min,ia=Math.max,ja=Math.round;function n(a){return ia(ha(a,1),0)}function ka(a,b){return[a[0]-b[0],a[1]-b[1]]}function qa(a){return Math.sqrt(a[0]*a[0]+a[1]*a[1])}function ra(a){var b=1/qa(a);Infinity==b&&(b=aa);-Infinity==b&&(b=ca);return[a[0]*b,a[1]*b]}function v(a=0,b=0,e=0){return[a,b,e]}function x(a,b){return[a[0]+b[0],a[1]+b[1],a[2]+b[2]]}function y(a,b){return[a[0]*b,a[1]*b,a[2]*b]};function A(a,b){sa.addEventListener(a,b,!1)};function ta(){this.L=function(a){for(var b=0;24>b;b++)this[String.fromCharCode(97+b)]=a[b]||0;.01>this.c&&(this.c=.01);a=this.b+this.c+this.e;.18>a&&(a=.18/a,this.b*=a,this.c*=a,this.e*=a)}}
 var wa=new function(){this.L=new ta;var a,b,e,f,k,h,m,l,q,z,r,p;this.ia=function(){var c=this.L;f=100/(c.f*c.f+.001);k=100/(c.g*c.g+.001);h=1-c.h*c.h*c.h*.01;m=-c.i*c.i*c.i*1E-6;c.a||(r=.5-c.n/2,p=5E-5*-c.o);l=1+c.l*c.l*(0<c.l?-.9:10);q=0;z=1==c.m?0:(1-c.m)*(1-c.m)*2E4+32};this.qa=function(){this.ia();var c=this.L;a=c.b*c.b*1E5;b=c.c*c.c*1E5;e=c.e*c.e*1E5+12;return 3*((a+b+e)/3|0)};this.pa=function(c,d){var g=this.L,t=1!=g.s||g.v,w=g.v*g.v*.1,L=1+3E-4*g.w,V=g.s*g.s*g.s*.1,Bb=1+1E-4*g.t,Cb=1!=g.s,
 Db=g.x*g.x,Eb=g.g,Va=g.q||g.r,Fb=g.r*g.r*g.r*.2,Wa=g.q*g.q*(0>g.q?-1020:1020),Xa=g.p?((1-g.p)*(1-g.p)*2E4|0)+32:0,Gb=g.d,Ya=g.j/2,Hb=g.k*g.k*.01,Da=g.a,Ea=a,Ib=1/a,Jb=1/b,Kb=1/e;g=5/(1+g.u*g.u*20)*(.01+V);.8<g&&(g=.8);g=1-g;for(var Fa=!1,Za=0,la=0,ma=0,$a=0,ua=0,na,oa=0,H,W=0,X,Ga=0,u,ab=0,ba,bb=0,va=Array(1024),pa=Array(32),J=va.length;J--;)va[J]=0;for(J=pa.length;J--;)pa[J]=2*Math.random()-1;for(J=0;J<d;J++){if(Fa)return J;Xa&&++ab>=Xa&&(ab=0,this.ia());z&&++q>=z&&(z=0,f*=l);h+=m;f*=h;f>k&&(f=k,
@@ -53,7 +30,3 @@ function Tb(a){Qa.forEach(b=>b.update(a));Zb(a);Rb();C.fillStyle="#FFFFFF";Y(40)
 function Wb(a){Qa.forEach(f=>f.update(a));P.key[27]&&U(0);P.V&&(O=qb(),null!=O&&0!=O.D&&(O=null),rb(O),pb());if(P.da){let f=qb();null!=O&&null!=f&&(O==f?O.upgrade():(rb(O),O.na(f)))}let b=0,e=0;M.forEach(f=>{0==f.D&&(b+=1);1==f.D&&(e+=1)});0==b&&U(-3);0==e&&U(-2);K.forEach(f=>f.update(a));Zb(a);Rb()}function vb(){let a=window.performance;return a&&a.now?a.now():(new Date).getTime()}let $b=requestAnimationFrame;
 function ac(){tb=vb();ub=Math.min(1,(tb-wb)/1E3);ub>xb&&(ub=xb);wb=tb;Qb(ub);$b(ac);P.update();Q==Nb.clientWidth&&R==Nb.clientHeight||Pb()}$b(ac);function Pb(){Q=Nb.clientWidth;R=Nb.clientHeight;zb=Math.min(Q,R);Ab=.5*Q;Mb=.5*R;S=.01*zb;yb.width=Q;yb.height=R;var a=Q,b=R;Ca=v(.5*a,.5*b);Ha=Math.min(a,b)/1024}function Y(a=24){R>Q&&(a*=R/Q);C.font=parseInt(a)+"pt Arial";C.textAlign="center"}function Yb(a,b){C.fillText(a,0*S+Ab,b*S+Mb)}
 function Z(a,b,e,f){f=f*S*.5;let k=3*S;b=b*S+Ab;e=e*S+Mb;C.fillStyle="#66666699";C.fillRect(b-f,e-k-12,2*f,2*k);C.fillStyle="#FFFFFF";C.fillText(a,b,e);return P.V&&(a=P.W,b-f<a[0]&&e-k<a[1]&&b+f>a[0]&&e+k>a[1])?(P.update(1),!0):!1}function Xb(a){Ja+=8*a;360<Ja&&(Ja-=360);Ia()}function Zb(a){Ob+=.1*a;Ja=.9*Ja+.1*(10*fa(Ob)+65);Ia()};
-
-
-</script>
-</html>
