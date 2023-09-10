@@ -25,7 +25,6 @@ UpdateCanvasSize()
 let rect = canvasElement.getBoundingClientRect();
 
 var gameObjects = [];
-var drawObjects = [];
 CreateCastle(-6, 0, 0, 2)
 CreateCastle(6, 0, 1, 2)
 for(var i = -1; i < 2; i++) {
@@ -39,34 +38,14 @@ var input = CreateInput(rect)
 gameObjects.push(input)
 
 CreateEnemy(castles)
-
-function timestamp() {
-	let perf = window.performance;
-	return perf && perf.now ? perf.now() : new Date().getTime();
-}
-
+var stateFunction = update
 
 function render() {
 	// clear
 	canvas.fillStyle    = '#101010';  // black
 	canvas.fillRect ( 0, 0, width, height);
-
-	// map
-	// drawMap()
 	// camera
 	DrawCamera()
-
-	canvas.fillStyle    = '#333333';  // black
-	canvas.strokeStyle    = '#101010';  // black
-
-	// castles
-	drawObjects.forEach(g => g.draw(canvas))
-
-	// help
-	// canvas.font = "14pt Arial";
-	// canvas.fillText("Q / E - Rotate level", 10, 30)
-	// canvas.fillText("Z / X - change height constant", 10, 50)
-	// canvas.fillText("dt " + dt, 10, 30)
 }
 
 function update(dt) {
@@ -95,6 +74,8 @@ function update(dt) {
 	// SetCameraAngle(angle)
 	angle += 0.1 * dt
 	SetCameraAngle(Sin(angle) * 10 + 45)
+	// render
+	render()
 }
 
 let animationFrameFunction = requestAnimationFrame
@@ -106,8 +87,7 @@ function frame() {
 		dt = step;
 	}
 	time = now;
-	update(dt);
-	render();
+	stateFunction(dt);
 	animationFrameFunction(frame);
 	// update canvas on window change
 	if (width != docElement.clientWidth || height != docElement.clientHeight) {
@@ -115,6 +95,11 @@ function frame() {
 	}
 }
 animationFrameFunction(frame);
+
+function timestamp() {
+	let perf = window.performance;
+	return perf && perf.now ? perf.now() : new Date().getTime();
+}
 
 function UpdateCanvasSize() {
 	width = docElement.clientWidth
@@ -143,12 +128,4 @@ function fillText(text, x, y) {
 
 function fillRect(x, y, w, h) {
 	canvas.fillRect (x, y, w, h)
-}
-
-function fillRectScreen(x, y, w, h) {
-	canvas.fillRect (x * screenScale + centerX, y * screenScale + centerY, w * screenScale, h * screenScale)
-}
-
-function fillTextScreen(text, x, y) {
-	canvas.fillText(text, x * screenScale + centerX, y * screenScale + centerY);
 }
