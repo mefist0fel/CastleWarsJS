@@ -22,6 +22,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 		heightMapCache: CreateArray(mapSize * mapSize),
 		points: CreateArray(mapSize * mapSize * 4),
 		colors: CreateArray(mapSize * mapSize),
+		colorsCache: CreateArray(mapSize * mapSize),
 		tiles: CreateArray(mapSize * mapSize),
 		tilesTop: CreateArray(mapSize * mapSize),
 		tilesLeft: CreateArray(mapSize * mapSize),
@@ -33,33 +34,34 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 			return GetElementSafe(this.heightMapCache, x, y, this.size, 0)
 		},
 		setColor(x, y, color) {
-			SetElementSafe(this.colors, x, y, this.size, color)
+			SetElementSafe(this.colorsCache, x, y, this.size, color)
 		},
 		getColor(x, y) {
-			return GetElementSafe(this.colors, x, y, this.size, CreateVector3())
+			return GetElementSafe(this.colorsCache, x, y, this.size, CreateVector3())
 		},
 		update(dt) {
-			const conversionTime = 100;
+			const
+				heightConversionTime = 50,
+				colorConversionTime = 2
 			let needRebuild = false
 			for(var i = 0; i < this.heightMapCache.length; i++)
 			{
 				if (this.heightMap[i] != this.heightMapCache[i]) {
-					var needValue = this.heightMapCache[i]
-					var value = this.heightMap[i]
-					if (value > needValue) {
-						value -= conversionTime * dt
-						if (value < needValue) {
-							value = needValue
-						}
-					} else {
-						value += conversionTime * dt
-						if (value > needValue) {
-							value = needValue
-						}
-					}
+					this.heightMap[i] = Merge(this.heightMap[i], this.heightMapCache[i], heightConversionTime * dt)
 					needRebuild = true
-					this.heightMap[i] = value
 				}
+			}
+			for(var i = 0; i < this.colorsCache.length; i++)
+			{
+				if (this.colors[i][0] != this.colorsCache[i][0] ||
+					this.colors[i][1] != this.colorsCache[i][1] ||
+					this.colors[i][2] != this.colorsCache[i][2])
+					{
+						needRebuild = true
+						this.colors[i][0] = Merge(this.colors[i][0], this.colorsCache[i][0], colorConversionTime * dt)
+						this.colors[i][1] = Merge(this.colors[i][1], this.colorsCache[i][1], colorConversionTime * dt)
+						this.colors[i][2] = Merge(this.colors[i][2], this.colorsCache[i][2], colorConversionTime * dt)
+					}
 			}
 			this.rebuild()
 		},
@@ -156,7 +158,8 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 			map.tiles[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
 			map.tilesTop[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
 			map.tilesLeft[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
-			map.colors[index] = color;
+			map.colorsCache[index] = color;
+			map.colors[index] = CreateVector3(0, 0, 0);
 		}
 	}
 	map.rebuild()
@@ -180,6 +183,20 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 
 	function GetMapIndex(i, j, xFactor = 1, yFactor = 1) {
 		return i * xFactor + j * yFactor;
+	}
+	function Merge(from, to, speed) {
+		if (from > to) {
+			from -= speed
+			if (from < to) {
+				from = to
+			}
+		} else {
+			from += speed
+			if (from > to) {
+				from = to
+			}
+		}
+		return from
 	}
 }
 
@@ -254,6 +271,59 @@ function CreateLevel(id) {
 	castleTiles.clear()
 	enemy.enable = true
 	switch (id) {
+		case -1:
+			// Menu castle
+			const
+				_ = -0.0001,
+				A = 15,
+				F = 12
+			let castleHeights = [
+				A, F, A, F, A,
+				F, F, F, F, F,
+				A, F, F, F, A,
+				F, F, F, F, F,
+				A, F, A, F, A
+			]
+			let castleTower = [
+				7, 6, 7, 6, 7,
+				6, 6, 6, 6, 6,
+				7, 6, 2, 6, 7,
+				6, 6, 6, 6, 6,
+				7, 6, 7, 6, 7,
+			]
+			let wallVer = [
+				_, 4, 3, 4, _,
+				_, 3, 3, 3, _,
+				_, 4, 3, 4, _,
+				_, 3, 3, 3, _,
+				_, 4, 3, 4, _,
+			]
+			let wallHor = [
+				_, _, _, _, _,
+				4, 3, 4, 3, 4,
+				3, 3, 3, 3, 3,
+				4, 3, 4, 3, 4,
+				_, _, _, _, _,
+			]
+			// angular towers
+			ApplyCastleHeight(castleTiles, 33, 33, castleTower, 5, 6);
+			ApplyCastleHeight(castleTiles, 33, 47, castleTower, 5, 6);
+			ApplyCastleHeight(castleTiles, 47, 47, castleTower, 5, 6);
+			ApplyCastleHeight(castleTiles, 47, 33, castleTower, 5, 6);
+			// central tower
+			ApplyCastleHeight(castleTiles, 40, 40, castleHeights, 5, 6);
+			// walls tower
+			ApplyCastleHeight(castleTiles, 38, 33, wallVer, 5, 6);
+			ApplyCastleHeight(castleTiles, 42, 33, wallVer, 5, 6);
+			ApplyCastleHeight(castleTiles, 38, 47, wallVer, 5, 6);
+			ApplyCastleHeight(castleTiles, 42, 47, wallVer, 5, 6);
+
+			ApplyCastleHeight(castleTiles, 33, 38, wallHor, 5, 6);
+			ApplyCastleHeight(castleTiles, 33, 42, wallHor, 5, 6);
+			ApplyCastleHeight(castleTiles, 47, 38, wallHor, 5, 6);
+			ApplyCastleHeight(castleTiles, 47, 42, wallHor, 5, 6);
+			ApplyCastleColor(castleTiles, 30, 30, 25, getFactionColorVector3(0))
+			break;
 		case 0:
 			CreateCastle(3, 3, 0, 1) // player castle
 			CreateCastle(-3, -3, 1, 1) // enemy castle

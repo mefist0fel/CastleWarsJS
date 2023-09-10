@@ -68,7 +68,6 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		draw() {
 			// Draw
 			canvas.fillStyle = Vector3ToColor(getFactionColorVector3(castle.factionId))
-			canvas.textAlign = 'center'
 			fillText(castle.lives, castle.screenTopPosition[0], castle.screenTopPosition[1])
 			// upgrade marker
 			if (castle.lives >= upgradeCost[castle.level]) {
@@ -153,13 +152,14 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		setSelected(isSelected) {
 			let 
 				height = -0.00001,
-				color = whiteColor
-			if (this.pathCastle != null) {
 				color = grayColor
+			if (this.pathCastle != null) {
 				height = 0
+				color = grayColor
 			}
 			if (isSelected) {
 				height = 0
+				color = whiteColor
 			}
 			SetSelectionBorder(castleTiles, 39 + this.coord[0] * 5, 39 + this.coord[1] * 5, 7, color, height)
 		},

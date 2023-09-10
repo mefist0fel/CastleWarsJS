@@ -1,6 +1,6 @@
 				
 const reloadTime = 1.0;
-const playerFaction = 0;
+const playerFactionId = 0;
 var now,
 	dt = 0,
 	time = timestamp(),
@@ -16,6 +16,7 @@ var now,
 	centerY = 1, // 768 * 0.5
 	screenScale = 1, // find size of 1/10 cell
 	docElement = doc.documentElement,
+	cameraValue = 0,
 	angle = 0
 
 updateCanvasSize()
@@ -44,7 +45,7 @@ function render() {
 function setState(state){
 	// menu
 	if (state == 0) {
-		CreateLevel(0)
+		CreateLevel(-1)
 		stateFunction = updateMenu
 		return
 	}
@@ -72,9 +73,8 @@ function setState(state){
 }
 
 function updateWin(dt) {
+	rotateCamera(dt)
 	maps.forEach(m => m.update(dt));
-	angle += 0.1 * dt
-	SetCameraAngle(Sin(angle) * 10 + 65)
 	// render
 	render()
 	canvas.fillStyle    = '#66FF66';  // green
@@ -95,9 +95,8 @@ function updateWin(dt) {
 }
 
 function updateLose(dt) {
+	rotateCamera(dt)
 	maps.forEach(m => m.update(dt));
-	angle += 0.1 * dt
-	SetCameraAngle(Sin(angle) * 10 + 65)
 	// render
 	render()
 	canvas.fillStyle    = '#FF6666';  // green
@@ -117,9 +116,10 @@ function updateLose(dt) {
 }
 
 function updateMenu(dt) {
+	rotateCamera(dt)
 	maps.forEach(m => m.update(dt));
-	angle += 0.1 * dt
-	SetCameraAngle(Sin(angle) * 10 + 65)
+	// cameraValue += 0.1 * dt
+	// SetCameraAngle(Sin(cameraValue) * 10 + 65)
 	// render
 	render()
 	canvas.fillStyle    = '#FFFFFF';  // dark gray
@@ -137,8 +137,7 @@ function updateMenu(dt) {
 
 function updateLevel(dt) {
 	maps.forEach(m => m.update(dt));
-	angle += 0.1 * dt
-	SetCameraAngle(Sin(angle) * 10 + 65)
+	fixedCamera(dt)
 	// render
 	render()
 	canvas.fillStyle    = '#FFFFFF';
@@ -176,6 +175,9 @@ function updateGame(dt) {
 	}
 	if (input.mouseLeftDown) {
 		selectedCastle = getCastle(input.mousePosition)
+		if (selectedCastle != null && selectedCastle.factionId != playerFactionId) {
+			selectedCastle = null
+		}
 		findAvailableForMoveCastles(selectedCastle)
 		updateSelection()
 	}
@@ -211,11 +213,8 @@ function updateGame(dt) {
 
 	// update objects
 	gameObjects.forEach(g => g.update(dt));
-	// rotate camera
-    // angle += 20 * dt
-	// SetCameraAngle(angle)
-	angle += 0.1 * dt
-	SetCameraAngle(Sin(angle) * 10 + 65)
+
+	fixedCamera(dt)
 	// render
 	render()
 }
@@ -264,6 +263,7 @@ function setFontSize(fontSize = 24.0){
 		fontSize *= height / width
 	}
 	canvas.font = parseInt(fontSize) + "pt Arial"
+	canvas.textAlign = 'center'
 }
 
 function fillText(text, x, y) {
@@ -303,4 +303,20 @@ function button(text, x, y, w, h) {
 		}
 	}
 	return false
+}
+
+function rotateCamera(dt) {
+	// rotate camera
+    angle += 8 * dt
+	if (angle > 360) {
+		angle -= 360
+	}
+	SetCameraAngle(angle)
+}
+
+function fixedCamera(dt) {
+	cameraValue += 0.1 * dt
+	var needCamera = Sin(cameraValue) * 10 + 65
+	angle = angle * 0.9 + needCamera * 0.1
+	SetCameraAngle(angle)
 }

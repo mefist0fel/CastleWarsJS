@@ -62,11 +62,12 @@ function CreateQuad3D (a, b, c, d, color = CreateVector3(1, 1, 1), offset=0) {
 		color: color,
 		enable: true,
         setPoints(a, b, c, d, position = null) {
-            quad.points = [a, b, c, d]
+            this.points = [a, b, c, d]
             if (position == null)
-                quad.position = FindMiddlePoint(quad.points)
+                this.position = FindMiddlePoint(quad.points)
             else
-                quad.position = position
+                this.position = position
+            this.position[2] = 0
 		},
         setColor(newColor) {
             quad.color = newColor
