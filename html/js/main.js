@@ -222,6 +222,11 @@ function updateGame(dt) {
 	render()
 }
 
+function timestamp() {
+	let perf = window.performance;
+	return perf && perf.now ? perf.now() : new Date().getTime();
+}
+
 let animationFrameFunction = requestAnimationFrame
 
 function frame() {
@@ -239,11 +244,6 @@ function frame() {
 	}
 }
 animationFrameFunction(frame);
-
-function timestamp() {
-	let perf = window.performance;
-	return perf && perf.now ? perf.now() : new Date().getTime();
-}
 
 function updateCanvasSize() {
 	width = docElement.clientWidth
