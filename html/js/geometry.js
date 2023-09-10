@@ -8,6 +8,7 @@ const Min = Math.min
 const Max = Math.max
 const Round = Math.round
 const Random = Math.random
+const Floor = Math.floor
 
 
 function Clamp01(value) {
