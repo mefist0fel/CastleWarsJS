@@ -7,6 +7,8 @@ const Sin = Math.sin
 const Min = Math.min
 const Max = Math.max
 const Round = Math.round
+const Random = Math.random
+
 
 function Clamp01(value) {
 	return Max(Min(value, 1), 0)

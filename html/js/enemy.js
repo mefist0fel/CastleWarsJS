@@ -13,7 +13,7 @@ function CreateEnemy(factionId = 1, dummyDelay = 1) {
 			}
 			this.timer -= dt
 			if (this.timer < 0) {
-				this.timer = updateDelay + Math.random() * dummyDelay
+				this.timer = updateDelay + Random() * dummyDelay
 				castles.forEach(
 					castle => {
 						if (castle.factionId == this.factionId) {
@@ -22,13 +22,13 @@ function CreateEnemy(factionId = 1, dummyDelay = 1) {
 								if (castle.level > 3) {
 									this.attackSomebody(castle)
 								}
-								if (Math.random() < 0.3) {
+								if (Random() < 0.3) {
 									castle.upgrade()
 								} else {
 									this.attackSomebody(castle)
 								}
 							}
-							this.threshold = 20 + Math.random(15)
+							this.threshold = 20 + Random(15)
 						}
 					})
 			}
@@ -51,7 +51,7 @@ function CreateEnemy(factionId = 1, dummyDelay = 1) {
 				})
 			}
 			if (castlesToAttack.length > 0) {
-				fromCastle.sendArmy(castlesToAttack[Math.floor(Math.random()*castlesToAttack.length)])
+				fromCastle.sendArmy(castlesToAttack[Math.floor(Random()*castlesToAttack.length)])
 			}
 		}
 	}
