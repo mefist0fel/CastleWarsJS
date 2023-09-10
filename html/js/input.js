@@ -82,7 +82,7 @@ function CreateInput(rect) {
 	// function ontouchmove(event) {
 	// }
 
-	addEvent('contextmenu', preventmenu);
+	// addEvent('contextmenu', preventmenu);
 
 	addEvent('keydown',    onkeydown );
 	addEvent('keyup',      onkeyup   );

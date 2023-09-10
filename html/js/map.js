@@ -15,7 +15,7 @@ const tileOffsets = [
 
 //CreateQuad3D(tileOffsets[0], tileOffsets[1], tileOffsets[2], tileOffsets[3])
 
-function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
+function CreateCellMap(mapSize, scale, threshold = -1, depthOffset = 0) {
 	let pointsLen = mapSize * 4;
 	let map = {
 		heightMap: CreateArray(mapSize * mapSize),
@@ -27,6 +27,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 		tilesTop: CreateArray(mapSize * mapSize),
 		tilesLeft: CreateArray(mapSize * mapSize),
 		size: mapSize,
+		threshold: threshold,
 		setHeight(x, y, height) {
 			SetElementSafe(this.heightMapCache, x, y, this.size, height)
 		},
@@ -63,7 +64,9 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 						this.colors[i][2] = Merge(this.colors[i][2], this.colorsCache[i][2], colorConversionTime * dt)
 					}
 			}
-			this.rebuild()
+			if (needRebuild) {
+				this.rebuild()
+			}
 		},
 		rebuild() {
 			for(var i = 0; i < this.size; i++)
@@ -90,7 +93,7 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 						this.points[GetMapIndex(i * 2 + 1 ,  j * 2 + 1, pointsLen)],
 						this.points[GetMapIndex(i * 2 + 0 ,  j * 2 + 1, pointsLen)])
 					this.tiles[index].setColor(this.colors[index])
-					this.tiles[index].enable = this.heightMap[index] >= 0
+					this.tiles[index].enable = this.heightMap[index] >= this.threshold
 
 					if (i < this.size - 1) {
 						this.tilesTop[index].setPoints(
@@ -102,10 +105,10 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 						let color
 						if (this.heightMap[index] > this.heightMap[topIndex]) {
 							color = MultiplyVector3(this.colors[index], 0.8)
-							this.tilesTop[index].enable = this.heightMap[index] >= 0
+							this.tilesTop[index].enable = this.heightMap[index] >= this.threshold
 						} else {
 							color = MultiplyVector3(this.colors[topIndex], 0.8)
-							this.tilesTop[index].enable = this.heightMap[topIndex] >= 0
+							this.tilesTop[index].enable = this.heightMap[topIndex] >= this.threshold
 						}
 						this.tilesTop[index].setColor(color)
 					}
@@ -120,23 +123,23 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 						let color
 						if (this.heightMap[index] > this.heightMap[leftIndex]) {
 							color = MultiplyVector3(this.colors[index], 0.7)
-							this.tilesLeft[index].enable = this.heightMap[index] >= 0
+							this.tilesLeft[index].enable = this.heightMap[index] >= this.threshold
 						} else {
 							color = MultiplyVector3(this.colors[leftIndex], 0.7)
-							this.tilesLeft[index].enable = this.heightMap[leftIndex] >= 0
+							this.tilesLeft[index].enable = this.heightMap[leftIndex] >= this.threshold
 						}
 						this.tilesLeft[index].setColor(color)
 					}
 				}
 			}
 		},
-		clear() {
+		clear(height = 0) {
 			for(var i = 0; i < this.size; i++)
 			{
 				for(var j = 0; j < this.size; j++)
 				{
 					let index = GetMapIndex(i, j, this.size)
-					this.heightMapCache[index] = defaultHeight
+					this.heightMapCache[index] = height
 				}
 			}
 			this.rebuild()
@@ -152,8 +155,8 @@ function CreateCellMap(mapSize, scale, defaultHeight = -1, depthOffset = 0) {
 		for(var j = 0; j < map.size; j++)
 		{
 			let index = GetMapIndex(i, j, map.size)
-			map.heightMap[index] = defaultHeight
-			map.heightMapCache[index] = defaultHeight
+			map.heightMap[index] = map.threshold
+			map.heightMapCache[index] = map.threshold
 			let color = CreateVector3(1, 1, 1)
 			map.tiles[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
 			map.tilesTop[index] = CreateQuad3D(color, color, color, color, color, depthOffset)
@@ -209,6 +212,22 @@ function GetHeightColor(level) {
 	return CreateVector3(r, g, b)
 }
 
+function GetDesertHeightColor(level) {
+	// level should be 0-1
+	let r = Clamp01(0.5 + level * 0.5)
+	let g = Clamp01(0.5 + level * 0.5)
+	let b = Clamp01(0.3 + level * 0.1)
+	return CreateVector3(r, g, b)
+}
+
+function GetSnowHeightColor(level) {
+	// level should be 0-1
+	let r = Clamp01(0.5 + level * 0.9)
+	let g = Clamp01(0.5 + level * 0.9)
+	let b = Clamp01(0.7 + level * 1.5)
+	return CreateVector3(r, g, b)
+}
+
 function ApplyCastleHeight(tileMap, x, y, castleHeight, size, heightScale = 1) {
 	for(var i = 0; i < size; i++) {
 		for(var j = 0; j < size; j++) {
@@ -243,33 +262,40 @@ const mapOffsets = [
     CreateVector3( 1,-1)
 ]
 
-var castleTiles = CreateCellMap(85, 10, -0.00001, -50)
-var map = CreateCellMap(mapSize, 50, 50)
+var castleTiles = CreateCellMap(85, 10, 0, -50)
+var map = CreateCellMap(mapSize, 50, -100)
 
-for(var i = 0; i < mapSize; i++)
-{
-	for(var j = 0; j < mapSize; j++)
+function updateMap(heightFunction, colorFunction) {
+	for(var i = 0; i < mapSize; i++)
 	{
-		let height =  GetNoiseA(i, j, 0.6) * 80
-
-		let position = CreateVector3(i - halfMapSize, j - halfMapSize)
-		let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.4 - 1)
-		height *= normalizedDistance
-		
-		let isBorder = !(i > 0 && j > 0 && i < mapSize - 1 && j < mapSize - 1);
-		if (isBorder)
-			height = -1
-
-		map.setHeight(i, j, height)
-		map.setColor(i, j, GetHeightColor(height / 80))
+		for(var j = 0; j < mapSize; j++)
+		{
+			let height = heightFunction(i, j)
+	
+			let position = CreateVector3(i - halfMapSize, j - halfMapSize)
+			let normalizedDistance = Clamp01(Vector3Length(position) / halfMapSize * 2.4 - 1)
+			height *= normalizedDistance
+			
+			let isBorder = !(i > 0 && j > 0 && i < mapSize - 1 && j < mapSize - 1);
+			if (isBorder)
+				height = -100.01
+	
+			map.setHeight(i, j, height)
+			map.setColor(i, j, colorFunction(i, j))
+		}
 	}
 }
+function getCenterFlat(x, y) {
+	let position = CreateVector3(x - halfMapSize, y - halfMapSize)
+	return Clamp01(Vector3Length(position) / halfMapSize * 2.4 - 1)
+}
+
 map.rebuild()
 
 function CreateLevel(id) {
 	removeUnits()
 	removeCastles()
-	castleTiles.clear()
+	castleTiles.clear(-0.00001)
 	enemy.enable = true
 	switch (id) {
 		case -1:
@@ -324,6 +350,10 @@ function CreateLevel(id) {
 			ApplyCastleHeight(castleTiles, 47, 38, wallHor, 5, 6);
 			ApplyCastleHeight(castleTiles, 47, 42, wallHor, 5, 6);
 			ApplyCastleColor(castleTiles, 30, 30, 25, getFactionColorVector3(0))
+			// Green
+			updateMap(
+				(x, y) => GetNoiseA(x, y, 0.3) * 80 * getCenterFlat(x, y),
+				(x, y) => GetHeightColor(GetNoiseA(x, y, 0.3) * getCenterFlat(x, y)))
 			break;
 		case 0:
 			CreateCastle(3, 3, 0, 1) // player castle
@@ -332,6 +362,10 @@ function CreateLevel(id) {
 			CreateCastle(-1, 1)
 			findNeibghors(6)
 			enemy.enable = false
+			// Green
+			updateMap(
+				(x, y) => GetNoiseA(x, y, 0.3, 300) * 80 * getCenterFlat(x, y),
+				(x, y) => GetHeightColor(GetNoiseA(x, y, 0.3, 300) * getCenterFlat(x, y)))
 			break;
 		default:
 		case 1:
@@ -343,6 +377,10 @@ function CreateLevel(id) {
 				}
 			}
 			findNeibghors(6)
+			// Desert
+			updateMap(
+				(x, y) => GetNoiseA(x, y, 0.45) * 80 * getCenterFlat(x, y),
+				(x, y) => GetDesertHeightColor(GetNoiseA(x, y, 0.45) * getCenterFlat(x, y)))
 			break;
 		case 2:
 			CreateCastle(3, 3, 0, 1) // player castle
@@ -353,6 +391,10 @@ function CreateLevel(id) {
 			CreateCastle(0, -3)
 			CreateCastle(0, 3)
 			findNeibghors(6)
+			// Snow
+			updateMap(
+				(x, y) => GetNoiseA(x, y, 0.35, 300) * 80 * getCenterFlat(x, y),
+				(x, y) => GetSnowHeightColor(GetNoiseA(x, y, 0.35, 300) * getCenterFlat(x, y)))
 			break;
 	}
 }

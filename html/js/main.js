@@ -73,6 +73,10 @@ function setState(state){
 	}
 }
 
+function scaleTo(scale) {
+	cameraScale = scale * 0.02 + cameraScale * 0.98
+}
+
 function rotateCamera(dt) {
 	// rotate camera
     angle += 8 * dt
@@ -90,6 +94,7 @@ function fixedCamera(dt) {
 }
 
 function updateWin(dt) {
+	scaleTo(1.2)
 	rotateCamera(dt)
 	maps.forEach(m => m.update(dt));
 	// render
@@ -112,6 +117,7 @@ function updateWin(dt) {
 }
 
 function updateLose(dt) {
+	scaleTo(1.2)
 	rotateCamera(dt)
 	maps.forEach(m => m.update(dt));
 	// render
@@ -133,7 +139,7 @@ function updateLose(dt) {
 }
 
 function updateMenu(dt) {
-	cameraScale = 1.6 * 0.05 + cameraScale * 0.95
+	scaleTo(1.2)
 	rotateCamera(dt)
 	maps.forEach(m => m.update(dt));
 	// cameraValue += 0.1 * dt
@@ -154,6 +160,7 @@ function updateMenu(dt) {
 }
 
 function updateLevel(dt) {
+	scaleTo(1.4)
 	maps.forEach(m => m.update(dt));
 	fixedCamera(dt)
 	// render
@@ -162,8 +169,11 @@ function updateLevel(dt) {
 	setFontSize(40)
 	fillTextScreen("SELECT LEVEL", 0, -35)
 	
+	setFontSize(32)
 	if (currentLevel > 0) {
 		fillTextScreen(currentLevel, 0, -25)
+	} else {
+		fillTextScreen("TUTORIAL", 0, -25)
 	}
 	setFontSize()
 
@@ -187,6 +197,7 @@ function updateLevel(dt) {
 }
 
 function updateGame(dt) {
+	scaleTo(1.6)
 	maps.forEach(m => m.update(dt));
 	if (input.key[27]) { // esc
 		setState(0)
