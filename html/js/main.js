@@ -147,7 +147,7 @@ function updateLevel(dt) {
 	fillTextScreen("SELECT LEVEL", 0, -35)
 	
 	if (currentLevel > 0) {
-		fillTextScreen(currentLevel, 0, 0)
+		fillTextScreen(currentLevel, 0, -25)
 	}
 	setFontSize()
 

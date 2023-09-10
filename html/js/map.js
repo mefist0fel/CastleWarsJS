@@ -235,8 +235,8 @@ function CreateLevel(id) {
 			break;
 		default:
 		case 1:
-			CreateCastle(-6, 0, 0, 2) // player castle
-			CreateCastle(6, 0, 1, 2) // enemy castle
+			CreateCastle(0, 6, 0, 2) // player castle
+			CreateCastle(0, -6, 1, 2) // enemy castle
 			for(var i = -1; i < 2; i++) {
 				for(var j = -1; j < 2; j++) {
 					CreateCastle(i * 3, j * 3)
