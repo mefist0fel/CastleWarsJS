@@ -31,6 +31,7 @@ var
 	currentLevel = 0,
 	stateFunction = null
 
+cameraScale = 0.7
 setState(0)
 setFontSize()
 
@@ -116,6 +117,7 @@ function updateLose(dt) {
 }
 
 function updateMenu(dt) {
+	cameraScale = 1.6 * 0.05 + cameraScale * 0.95
 	rotateCamera(dt)
 	maps.forEach(m => m.update(dt));
 	// cameraValue += 0.1 * dt
