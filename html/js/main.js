@@ -186,7 +186,7 @@ function updateLevel(dt) {
 	}
 	setFontSize()
 
-	if (button("START", 0, 20, 18, 6)) {
+	if (button("start", 0, 20, 18, 6)) {
 		setState(1)
 	}
 	if (input.key[32]) { // space
