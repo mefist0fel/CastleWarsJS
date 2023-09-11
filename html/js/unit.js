@@ -18,10 +18,7 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 		velocity: zeroVector,
 		moveTime: 0,
 		faction: factionId,
-		scale: 1,
 		target: null,
-		currentCoord: [x, y],
-		targetCoord: [x, y],
 		path: [...pathToTarget],
 		lives: 1,
         prepareScene () {
@@ -32,7 +29,7 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
         },
 		draw() {
 			// Draw unit
-			var height = Math.abs(SubstractVector3(this.screenPosition, this.screenPositionTop)[2]) * this.scale;
+			var height = Math.abs(SubstractVector3(this.screenPosition, this.screenPositionTop)[2]);
 			var smallHeight = height * 0.2;
 			var width = height * 0.34;
 			let shieldLeft = [
@@ -48,39 +45,33 @@ function CreateUnit(x, y, factionId, pathToTarget, offset = 0) {
 				AddVector3(this.screenPosition, CreateVector3(-width, 0)),
 			]
 			// canvas.fillRect  (this.screenPosition[0] - width, this.screenPosition[1] - height, width + width, height)
-			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(unit.faction), 0.95));
+			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(this.faction), 0.95));
 			DrawQuad(shieldLeft)
-			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(unit.faction), 0.85));
+			canvas.fillStyle = Vector3ToColor(MultiplyVector3(getFactionColorVector3(this.faction), 0.85));
 			DrawQuad(shieldRight)
 		},
 		update(dt) {
 			// move to point
-			unit.coord = AddVector2(unit.coord, MultiplyVector2(unit.velocity, dt))
-			unit.position = [
-				(unit.coord[0] + unit.offsetVector[0] * unit.offset * 0.2) * 50,
-				(unit.coord[1] + unit.offsetVector[1] * unit.offset * 0.2) * 50,
+			this.coord = AddVector2(this.coord, MultiplyVector2(this.velocity, dt))
+			this.position = [
+				(this.coord[0] + this.offsetVector[0] * this.offset * 0.2) * 50,
+				(this.coord[1] + this.offsetVector[1] * this.offset * 0.2) * 50,
 				Sin(this.moveTime * 30 + this.offset) * 2]
-			unit.scale = Clamp01(Min(
-				(manhattanDistance(unit.coord, unit.currentCoord) - 0.05) * 20,
-				(manhattanDistance(unit.coord, unit.targetCoord) - 0.05) * 20,
-			))
-			unit.moveTime -= dt
+			this.moveTime -= dt
 			// if movement ended - check do we have path or this is the end point of path
-			if (unit.moveTime <= 0) {
-				if (unit.path.length > 0) {
+			if (this.moveTime <= 0) {
+				if (this.path.length > 0) {
 					// get next point from path stack
-					unit.target = unit.path.pop()
-					unit.currentCoord = unit.targetCoord 
-					unit.targetCoord = unit.target.coord
-					var delta = SubstractVector2(unit.target.coord, unit.coord)
+					this.target = this.path.pop()
+					var delta = SubstractVector2(this.target.coord, this.coord)
 					var direction = NormalizeVector2(delta)
-					unit.offsetVector = [-direction[1], direction[0]] // prependicular
+					this.offsetVector = [-direction[1], direction[0]] // prependicular
 					var distance = Vector2Length(delta)
-					unit.velocity = MultiplyVector2(direction, unitSpeed)
-					unit.moveTime = distance / unitSpeed
+					this.velocity = MultiplyVector2(direction, unitSpeed)
+					this.moveTime = distance / unitSpeed
 				} else {
 					// attack and
-					unit.target.attack(unit.faction)
+					this.target.attack(this.faction)
 					// kill
 					removeItem(gameObjects, unit)
 					removeItem(objects3d, unit)
@@ -109,8 +100,4 @@ function removeItem(array, item) {
 	if (index > -1) {
 		array.splice(index, 1);
 	}
-}
-
-function manhattanDistance(coordA, coordB) {
-	return Min(Abs(coordA[0] - coordB[0]), Abs(coordA[1] - coordB[1]), )
 }

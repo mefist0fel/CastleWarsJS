@@ -49,6 +49,7 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 		factionId: factionId,
 		attackCount: 0,
 		pathToTarget: null,
+		additionalText: null,
 		target: null,
 		level: level,
 		lives: 10,
@@ -67,11 +68,19 @@ function CreateCastle(x, y, factionId = -1, level=0) {
         },
 		draw() {
 			// Draw
-			canvas.fillStyle = Vector3ToColor(getFactionColorVector3(castle.factionId))
-			fillText(castle.lives, castle.screenTopPosition[0], castle.screenTopPosition[1])
+			canvas.fillStyle = Vector3ToColor(getFactionColorVector3(this.factionId))
+			fillText(this.lives, this.screenTopPosition[0], this.screenTopPosition[1])
 			// upgrade marker
-			if (castle.lives >= upgradeCost[castle.level]) {
-				fillText ("^", castle.screenTopPosition[0] + this.screenSize[0] * 0.5, castle.screenTopPosition[1])
+			if (this.lives >= upgradeCost[this.level]) {
+				fillText ("^", this.screenTopPosition[0] + this.screenSize[0] * 0.5, this.screenTopPosition[1])
+			}
+			// additional text
+			if (this.additionalText != null) {
+				var lines = this.additionalText.split('\n');
+				
+				for (var i = 0; i < lines.length; i++) {
+					fillText (lines[i], this.screenTopPosition[0], this.screenTopPosition[1] - this.screenSize[1] * (lines.length - i))
+				}
 			}
 		},
 		upgrade() {
@@ -121,7 +130,11 @@ function CreateCastle(x, y, factionId = -1, level=0) {
 				this.lives += 1
 			} else {
 				if (this.lives <= 0) {
+					// capture castle
 					this.factionId = factionId
+					if (this.level > 0) {
+						this.level -= 1
+					}
 					// update color
 					this.rebuild()
 					this.lives = 1
@@ -195,9 +208,10 @@ function removeCastles() {
 
 function getFactionColorVector3(factionId) {
 	switch (factionId) {
-		case 0: return CreateVector3(0.2, 0.2, 1.0); // player
-		case 1: return CreateVector3(1.0, 0.2, 0.2); // enemy
-		case 2: return CreateVector3(0.2, 1.0, 0.2); // enemy 2
+		case 0: return CreateVector3(0.2, 0.2, 0.95); // player
+		case 1: return CreateVector3(0.9, 0.2, 0.2); // enemy
+		case 2: return CreateVector3(0.2, 0.9, 0.2); // enemy 2
+		case 3: return CreateVector3(0.9, 0.9, 0.2); // enemy 3
 		case -1:
 		default:	
 			return CreateVector3(0.6, 0.6, 0.6); // neutral

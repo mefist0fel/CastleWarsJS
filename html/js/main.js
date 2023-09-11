@@ -27,9 +27,14 @@ let rect = canvasElement.getBoundingClientRect();
 
 var
 	input = CreateInput(rect),
-	enemy = CreateEnemy(),
+	enemy = CreateEnemy(),// enemy 1
 	currentLevel = 0,
+	levelName = null,
+	tutorStep = 0,
 	stateFunction = null
+
+CreateEnemy(2) // enemy 2
+CreateEnemy(3) // enemy 3
 
 cameraScale = 0.7
 setState(0)
@@ -68,6 +73,12 @@ function setState(state){
 	}
 	// start game
 	if (state == 1) {
+		if (currentLevel == 0) {
+			tutorStep = 0
+			nextTutorStep()
+			stateFunction = updateTutor
+			return
+		}
 		stateFunction = updateGame
 		return
 	}
@@ -101,13 +112,13 @@ function updateWin(dt) {
 	render()
 	canvas.fillStyle    = '#66FF66';  // green
 	setFontSize(60)
-	fillTextScreen("WIN", 0, -35)
+	fillTextScreen("You won!", 0, -35)
 	setFontSize()
 
-	if (button("MENU", 0, 0, 18, 6)) {
+	if (button("menu", 0, 0, 18, 6)) {
 		setState(0)
 	}
-	if (button("NEXT", 0, 20, 18, 6)) {
+	if (button("next", 0, 20, 18, 6)) {
 		currentLevel += 1
 		setState(-1)
 	}
@@ -124,13 +135,13 @@ function updateLose(dt) {
 	render()
 	canvas.fillStyle    = '#FF6666';  // green
 	setFontSize(60)
-	fillTextScreen("LOSE", 0, -35)
+	fillTextScreen("You lose!", 0, -35)
 	setFontSize()
 
-	if (button("MENU", 0, 0, 18, 6)) {
+	if (button("menu", 0, 0, 18, 6)) {
 		setState(0)
 	}
-	if (button("RESTART", 0, 20, 18, 6)) {
+	if (button("restart", 0, 20, 18, 6)) {
 		setState(-1)
 	}
 	if (input.key[27]) { // esc
@@ -151,7 +162,7 @@ function updateMenu(dt) {
 	fillTextScreen("CASTLE WARS", 0, -35)
 	setFontSize()
 
-	if (button("START", 0, 20, 18, 6)) {
+	if (button("start", 0, 20, 18, 6)) {
 		setState(-1)
 	}
 	if (input.key[32]) { // space
@@ -167,13 +178,11 @@ function updateLevel(dt) {
 	render()
 	canvas.fillStyle    = '#FFFFFF';
 	setFontSize(40)
-	fillTextScreen("SELECT LEVEL", 0, -35)
+	fillTextScreen("Select level", 0, -35)
 	
 	setFontSize(32)
-	if (currentLevel > 0) {
-		fillTextScreen(currentLevel, 0, -25)
-	} else {
-		fillTextScreen("TUTORIAL", 0, -25)
+	if (levelName != null) {
+		fillTextScreen(levelName, 0, -25)
 	}
 	setFontSize()
 
@@ -194,6 +203,70 @@ function updateLevel(dt) {
 		currentLevel -= 1
 		CreateLevel(currentLevel)
 	}
+}
+function nextTutorStep() {
+	tutorStep += 1
+	switch (tutorStep) {
+		case 1:
+			castles[0].additionalText = "this is your castle\nprotect it"
+			castles[1].additionalText = null
+			return
+		case 2:
+			castles[1].additionalText = "it's your enemy\ndestroy him!"
+			return
+		case 3:
+			castles[0].additionalText = "your castles produce troops\nselect your castle"
+			castles[1].additionalText = null
+			return
+		case 4:
+			selectedCastle = castles[0]
+			findAvailableForMoveCastles(selectedCastle)
+			updateSelection()
+			castles[0].additionalText = null
+			castles[1].additionalText = null
+			castles[2].additionalText = "right click to send\nyour troops to attack"
+			return
+		case 5:
+			castles[0].lives = Min(castles[0].lives, 25)
+			castles[0].sendArmy(castles[2])
+			castles[2].additionalText = "you need more troops\nto capture enemy castle"
+			return
+		case 6:
+			castles[0].lives = Min(castles[0].lives, 21)
+			castles[0].additionalText = "you also can use your troops\nto upgrade ^ your castles"
+			castles[2].additionalText = null
+			return
+		case 7:
+			castles[0].lives = Min(castles[0].lives, 21)
+			castles[0].additionalText = "better castles produce more troops\nright click on your castle to upgrade it"
+			return
+		case 8:
+			castles[0].upgrade()
+			castles[0].additionalText = "your battle begins!"
+			return
+	}
+	castles[0].additionalText = null
+	castles[1].additionalText = "Defeat your enemies!"
+	stateFunction = updateGame
+}
+
+function updateTutor(dt) {
+	scaleTo(1.6)
+	maps.forEach(m => m.update(dt));
+	if (input.key[27]) { // esc
+		setState(0)
+	}
+
+	if (input.mouseLeftDown || input.mouseRightDown) {
+		nextTutorStep()
+	}
+
+	// update objects
+	gameObjects.forEach(g => g.update(dt));
+
+	fixedCamera(dt)
+	// render
+	render()
 }
 
 function updateGame(dt) {

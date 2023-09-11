@@ -221,6 +221,9 @@ function GetDesertHeightColor(level) {
 }
 
 function GetSnowHeightColor(level) {
+	if (level < 0) {
+		level -= 0.5
+	}
 	// level should be 0-1
 	let r = Clamp01(0.5 + level * 0.9)
 	let g = Clamp01(0.5 + level * 0.9)
@@ -355,11 +358,12 @@ function CreateLevel(id) {
 				(x, y) => GetNoiseA(x, y, 0.3) * 80 * getCenterFlat(x, y),
 				(x, y) => GetHeightColor(GetNoiseA(x, y, 0.3) * getCenterFlat(x, y)))
 			break;
-		case 0:
+		case 0: // tutorial
+			levelName = "tutorial"
 			CreateCastle(3, 3, 0, 1) // player castle
 			CreateCastle(-3, -3, 1, 1) // enemy castle
-			CreateCastle(1, -1)
 			CreateCastle(-1, 1)
+			CreateCastle(1, -1)
 			findNeibghors(6)
 			enemy.enable = false
 			// Green
@@ -369,6 +373,22 @@ function CreateLevel(id) {
 			break;
 		default:
 		case 1:
+			levelName = "vikings raid"
+			CreateCastle(3, 3, 0, 1) // player castle
+			CreateCastle(-3, -3, 1, 1) // enemy castle
+			CreateCastle(0, 0)
+			CreateCastle(-3, 0)
+			CreateCastle(3, 0)
+			CreateCastle(0, -3)
+			CreateCastle(0, 3)
+			findNeibghors(6)
+			// Snow
+			updateMap(
+				(x, y) => (GetNoiseA(x, y, 0.35, 300) - 0.5) * 180 * getCenterFlat(x, y),
+				(x, y) => GetSnowHeightColor((GetNoiseA(x, y, 0.35, 300) * 0.5) * getCenterFlat(x, y)))
+			break;
+		case 2:
+			levelName = "desert storm"
 			CreateCastle(0, 6, 0, 2) // player castle
 			CreateCastle(0, -6, 1, 2) // enemy castle
 			for(var i = -1; i < 2; i++) {
@@ -382,9 +402,12 @@ function CreateLevel(id) {
 				(x, y) => GetNoiseA(x, y, 0.45) * 80 * getCenterFlat(x, y),
 				(x, y) => GetDesertHeightColor(GetNoiseA(x, y, 0.45) * getCenterFlat(x, y)))
 			break;
-		case 2:
+		case 3:
+			levelName = "Normann clash"
 			CreateCastle(3, 3, 0, 1) // player castle
 			CreateCastle(-3, -3, 1, 1) // enemy castle
+			CreateCastle(-3, 3, 2, 1) // enemy castle
+			CreateCastle(3, -3, 3, 1) // enemy castle
 			CreateCastle(0, 0)
 			CreateCastle(-3, 0)
 			CreateCastle(3, 0)
@@ -395,6 +418,23 @@ function CreateLevel(id) {
 			updateMap(
 				(x, y) => GetNoiseA(x, y, 0.35, 300) * 80 * getCenterFlat(x, y),
 				(x, y) => GetSnowHeightColor(GetNoiseA(x, y, 0.35, 300) * getCenterFlat(x, y)))
+			break;
+		case 4:
+			levelName = "Great war"
+			CreateCastle(0, 6, 0, 2) // player castle
+			CreateCastle(0, -6, 1, 2) // enemy castle
+			CreateCastle(6, 0, 2, 2) // enemy 2 castle
+			CreateCastle(-6, 0, 3, 2) // enemy 3 castle
+			for(var i = -1; i < 2; i++) {
+				for(var j = -1; j < 2; j++) {
+					CreateCastle(i * 3, j * 3)
+				}
+			}
+			findNeibghors(6)
+			// Green
+			updateMap(
+				(x, y) => (GetNoiseA(x, y, 0.3, 300) - 0.7) * 160 * getCenterFlat(x, y),
+				(x, y) => GetHeightColor((GetNoiseA(x, y, 0.3, 300) - 0.7) * getCenterFlat(x, y)))
 			break;
 	}
 }
