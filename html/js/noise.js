@@ -5,8 +5,17 @@ let
 
 // use pseudo random to get same landscapes
 for(var i = 0; i < noiseSize * noiseSize; i++) {
+	noiseBase.push(GetRandom())
+}
+
+function GetRandom() {
 	seed = seed * 16807 % 2147483647
-	noiseBase.push(Random(seed / 2147483647))
+	return seed / 2147483647
+}
+
+function GetRandomInt(bazis = 100) {
+	seed = seed * 16807 % 2147483647
+	return seed % bazis
 }
 
 function GetNoise(x, y) {

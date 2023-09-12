@@ -7,13 +7,14 @@ function CreateEnemy(factionId = 1, dummyDelay = 1) {
 		factionId: factionId,
 		timer: updateDelay,
 		threshold: 20,
+		dummyDelay: dummyDelay,
 		update(dt) {
 			if (!this.enable) {
 				return
 			}
 			this.timer -= dt
 			if (this.timer < 0) {
-				this.timer = updateDelay + Random() * dummyDelay
+				this.timer = updateDelay + Random() * this.dummyDelay
 				castles.forEach(
 					castle => {
 						if (castle.factionId == this.factionId) {

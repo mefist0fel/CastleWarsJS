@@ -300,6 +300,7 @@ function CreateLevel(id) {
 	removeCastles()
 	castleTiles.clear(-0.00001)
 	enemy.enable = true
+	enemy.dummyDelay = 1 // default
 	switch (id) {
 		case -1:
 			// Menu castle
@@ -371,8 +372,8 @@ function CreateLevel(id) {
 				(x, y) => GetNoiseA(x, y, 0.3, 300) * 80 * getCenterFlat(x, y),
 				(x, y) => GetHeightColor(GetNoiseA(x, y, 0.3, 300) * getCenterFlat(x, y)))
 			break;
-		default:
 		case 1:
+			enemy.dummyDelay = 5 // dumm
 			levelName = "vikings raid"
 			CreateCastle(3, 3, 0, 1) // player castle
 			CreateCastle(-3, -3, 1, 1) // enemy castle
@@ -388,6 +389,7 @@ function CreateLevel(id) {
 				(x, y) => GetSnowHeightColor((GetNoiseA(x, y, 0.35, 300) * 0.5) * getCenterFlat(x, y)))
 			break;
 		case 2:
+			enemy.dummyDelay = 3 // dumm
 			levelName = "desert storm"
 			CreateCastle(0, 6, 0, 2) // player castle
 			CreateCastle(0, -6, 1, 2) // enemy castle
@@ -403,6 +405,7 @@ function CreateLevel(id) {
 				(x, y) => GetDesertHeightColor(GetNoiseA(x, y, 0.45) * getCenterFlat(x, y)))
 			break;
 		case 3:
+			enemy.dummyDelay = 2// dumm
 			levelName = "Normann clash"
 			CreateCastle(3, 3, 0, 1) // player castle
 			CreateCastle(-3, -3, 1, 1) // enemy castle
@@ -435,6 +438,87 @@ function CreateLevel(id) {
 			updateMap(
 				(x, y) => (GetNoiseA(x, y, 0.3, 300) - 0.7) * 160 * getCenterFlat(x, y),
 				(x, y) => GetHeightColor((GetNoiseA(x, y, 0.3, 300) - 0.7) * getCenterFlat(x, y)))
+			break;
+		default:
+			levelName = "Random level " + id
+			var isValidated = false
+			var playersAmount = 2 + (id * 16807 % 3)
+			var castlesAmount = playersAmount + 3 + (id * 16807 % 8)
+			var maxLevel = 1 + (id * 16807 % 2)
+			seed = id
+			while (!isValidated) {
+				var grid = CreateArray(100)
+				removeUnits()
+				removeCastles()
+				castleTiles.clear(-0.00001)
+				for (let i = 0; i < castlesAmount; i++) {
+					let
+						randomX = GetRandomInt(4),
+						randomY = GetRandomInt(4),
+						index = randomX + randomY * 4
+					if (grid[index] == undefined) {
+						randomX = randomX * 3 - 5 - GetRandomInt(2)
+						randomY = randomY * 3 - 5 - GetRandomInt(2)
+						grid[index] = CreateCastle(randomX, randomY, -1, GetRandomInt(maxLevel))
+					} else {
+						i -= 1
+					}
+				}
+				findNeibghors(6)
+				// check availability
+				findAvailableForMoveCastles(castles[0])
+				castles[0].pathCastle = castles[0]
+				updateSelection()
+				isValidated = true
+				for(var i = 0; i < castles.length; i++) {
+					if (castles[i].pathCastle == null) {
+						isValidated = false
+					}
+				}
+				seed += 1
+			}
+			for(var f = 0; f < playersAmount; f++) {
+				castles[f].factionId = f;
+				castles[f].level = maxLevel;
+				castles[f].rebuild()
+			}
+			let
+				offsetX = GetRandomInt(5000),
+				offsetY = GetRandomInt(5000)
+
+			switch(id * 16807 % 5) {
+				case 0:
+					// Snow
+					updateMap(
+						(x, y) => GetNoiseA(x, y, 0.35, offsetX, offsetY) * 80 * getCenterFlat(x, y),
+						(x, y) => GetSnowHeightColor(GetNoiseA(x, y, 0.35, offsetX, offsetY) * getCenterFlat(x, y)))
+					break;
+				case 1:
+					// Green
+					updateMap(
+						(x, y) => GetNoiseA(x, y, 0.3, offsetX, offsetY) * 80 * getCenterFlat(x, y),
+						(x, y) => GetHeightColor(GetNoiseA(x, y, 0.3, offsetX, offsetY) * getCenterFlat(x, y)))
+					break;
+				case 2:
+					// Desert
+					updateMap(
+						(x, y) => GetNoiseA(x, y, 0.45, offsetX, offsetY) * 80 * getCenterFlat(x, y),
+						(x, y) => GetDesertHeightColor(GetNoiseA(x, y, 0.45, offsetX, offsetY) * getCenterFlat(x, y)))
+					break
+				case 3:
+					// Green
+					updateMap(
+						(x, y) => (GetNoiseA(x, y, 0.3, offsetX, offsetY) - 0.7) * 160 * getCenterFlat(x, y),
+						(x, y) => GetHeightColor((GetNoiseA(x, y, 0.3, offsetX, offsetY) - 0.7) * getCenterFlat(x, y)))
+					break;
+				default:
+				case 4:
+					// Desert
+					updateMap(
+						(x, y) => (GetNoiseA(x, y, 0.45, offsetX, offsetY) - 0.7) * 160 * getCenterFlat(x, y),
+						(x, y) => GetDesertHeightColor((GetNoiseA(x, y, 0.45, offsetX, offsetY) - 0.7) * getCenterFlat(x, y)))
+					break
+			}
 			break;
 	}
 }
