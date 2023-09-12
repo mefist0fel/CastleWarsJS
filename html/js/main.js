@@ -302,7 +302,7 @@ function updateGame(dt) {
 		if (c.factionId == 0) {
 			playerCount += 1
 		}
-		if (c.factionId == 1) {
+		if (c.factionId > 0) {
 			enemyCount += 1
 		}
 	});
